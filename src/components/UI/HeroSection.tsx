@@ -3,7 +3,7 @@ import ballImage from "../../../public/мяч.png";
 
 export default function HeroSection() {
   return (
-    <section className="relative w-full max-w-[390px] h-[580px]  overflow-hidden bg-[#0d4a1e] mx-auto shadow-2xl">
+    <section className="relative  w-full h-[580px]  overflow-hidden bg-[#0d4a1e] mx-auto shadow-2xl">
       <div 
         className="absolute inset-0 opacity-55" 
         style={{

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import Header from "../components/Header";
-import { MessageCircle, Mail } from "lucide-react";
+import { Mail } from "lucide-react";
 import Footer from "../components/Footer";
 import { TelegramIcon } from "../components/UI/TelegramIcon";
 
