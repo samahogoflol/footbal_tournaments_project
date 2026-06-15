@@ -4,10 +4,10 @@ import { TelegramIcon } from './UI/TelegramIcon';
 
 export default function Footer() {
   const navLinks = [
-    // { href: '/tournaments', label: 'Список турнірів' },
+    { href: '/tournaments', label: 'Список турнірів' },
     { href: '/users', label: 'Зареєстровані учасники' },
     { href: '/leaderboards', label: 'Турнірна таблиця' },
-    { href: '/rules', label: 'Правила' },
+    { href: 'static/rules', label: 'Правила' },
     // { href: '/faq', label: 'FAQ' },
   ];
 

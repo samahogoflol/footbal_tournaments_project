@@ -5,6 +5,7 @@ import Header from "../components/Header";
 import { Mail } from "lucide-react";
 import Footer from "../components/Footer";
 import { TelegramIcon } from "../components/UI/TelegramIcon";
+import MigrationProvider from "../components/MigrationProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -13,11 +14,13 @@ export const metadata: Metadata = {
   description: "Платформа для футбольних турнірів",
 };
 
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+
   return (
     <html lang="uk">
       <body className={`${inter.className} bg-gray-100 text-gray-900 antialiased`}>
@@ -25,9 +28,9 @@ export default function RootLayout({
 
           <Header />
 
-          <main className="flex-1 "> 
+          <MigrationProvider>
             {children}
-          </main>
+          </MigrationProvider>
 
           <Footer/>
 
