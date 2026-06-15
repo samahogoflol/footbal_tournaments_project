@@ -1,26 +1,31 @@
-// src/app/tournaments/[id]/group-stage/page.tsx
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useParams } from 'next/navigation'; // <-- Використовуємо надійний хук
 import { ArrowLeft, CalendarDays } from 'lucide-react';
 import { supabase } from '@/src/lib/supabase';
 
-export default function GroupStagePage({ params }: { params: Promise<{ id: string }> }) {
-  const resolvedParams = use(params);
-  const tournamentId = resolvedParams.id;
+export default function GroupStagePage() {
+  // Витягуємо параметри безпечним для клієнтського компонента способом
+  const params = useParams();
+  const tournamentId = params?.id as string;
 
   const [activeRound, setActiveRound] = useState<number>(1);
   const [matches, setMatches] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // Завантажуємо всі матчі турніру з Supabase
+  // Завантажуємо матчі турніру з Supabase
   useEffect(() => {
     async function fetchMatches() {
+      if (!tournamentId) return;
+
       setLoading(true);
       const { data, error } = await supabase
         .from('matches')
         .select('*')
+        // РЕКОМЕНДАЦІЯ: Якщо у таблиці matches є колонка tournament_id, розкоментуй рядок нижче:
+        // .eq('tournament_id', tournamentId) 
         .order('id', { ascending: true });
 
       if (data) {
@@ -31,8 +36,9 @@ export default function GroupStagePage({ params }: { params: Promise<{ id: strin
       }
       setLoading(false);
     }
+    
     fetchMatches();
-  }, []);
+  }, [tournamentId]); // <-- Додали залежність
 
   // Фільтруємо матчі з бази даних за обраним туром
   const filteredMatches = matches.filter((match) => match.round === activeRound);

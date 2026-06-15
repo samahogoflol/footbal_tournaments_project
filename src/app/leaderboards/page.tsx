@@ -1,47 +1,53 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, Trophy, Medal } from 'lucide-react';
-
-const RAW_RESULTS = [
-  { id: 1, name: 'Денис', username: '@denistz300', points: 3 },
-  { id: 2, name: 'Олесь', username: '@ztrxss', points: 8 },
-  { id: 3, name: 'Віталій', username: '@redutsxg', points: 3 },
-  { id: 4, name: 'Без імені', username: '@nazaru4o', points: 5 },
-  { id: 5, name: 'Никита', username: '@sorevain', points: 1 },
-  { id: 6, name: 'vovachka ...', username: '@Vovachikkk', points: 1 },
-  { id: 7, name: 'Макс Гапон', username: '', points: 5 },
-  { id: 8, name: 'Сергій', username: '@T_E_S_S_T_E_A', points: 3 },
-  { id: 9, name: 'Микита Філіпʼєв', username: '@krikzz', points: 3 },
-  { id: 10, name: 'Anatoliy', username: '@Fatych_fatych', points: 2 },
-  { id: 11, name: '_ssanechikk_', username: '@sayndre17', points: 2 },
-  { id: 12, name: 'Без імені', username: '@kost1akkk', points: 3 },
-  { id: 13, name: 'Тарас', username: '@Turkishfly', points: 1 },
-  { id: 14, name: 'Славен', username: '@SlavenPoltava', points: 5 },
-  { id: 15, name: 'Ivan Dbv', username: '', points: 8 },
-  { id: 16, name: 'Serdiuk Sergiy', username: '', points: 4 },
-  { id: 17, name: 'Олександр', username: '', points: 1 },
-  { id: 18, name: 'Volodymyr', username: '@v15543', points: 3 },
-  { id: 19, name: 'Aewyxz', username: '@awaeks7', points: 5 },
-  { id: 20, name: 'Kumalwl21', username: '@Kumalwl21', points: 5 },
-  { id: 21, name: 'Tarasevich 15', username: '@Tarasevich15', points: 2 },
-  { id: 22, name: 'Сергій', username: '', points: 2 },
-  { id: 23, name: 'VLAD_5', username: '@vladislav_585', points: 8 },
-  { id: 24, name: 'Kalinin SERGant', username: '@SERGant_ZSU', points: 1 },
-  { id: 25, name: 'Макс FM База', username: '', points: 1 },
-  { id: 26, name: 'Kirill', username: '@someonekrch', points: 2 },
-  { id: 27, name: 'Тарас глівінський', username: '@tar_qwerty123456789', points: 1 },
-  { id: 28, name: 'Антон', username: '@dadadbada', points: 1 },
-];
+import { supabase } from '@/src/lib/supabase';
 
 export default function LeaderboardPage() {
+  const [users, setUsers] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
 
-  const sortedUsers = [...RAW_RESULTS].sort((a, b) => b.points - a.points);
+  useEffect(() => {
+    async function fetchLeaderboard() {
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('id, email, total_points');
+
+        if (error) {
+          console.error('Помилка завантаження профілів:', error);
+          return;
+        }
+
+        if (data) {
+          // Форматуємо дані для таблиці
+          const formattedData = data.map(profile => ({
+            id: profile.id,
+            email: profile.email || 'Невідомий учасник',
+            points: profile.total_points || 0
+          }));
+          
+          setUsers(formattedData);
+        }
+      } catch (err) {
+        console.error('Критична помилка:', err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchLeaderboard();
+  }, []);
+
+  // Сортуємо від найбільшої кількості балів до найменшої
+  const sortedUsers = [...users].sort((a, b) => b.points - a.points);
 
   let currentRank = 1;
   let previousPoints = sortedUsers.length > 0 ? sortedUsers[0].points : -1;
 
+  // Визначаємо місця (якщо бали однакові - місце однакове)
   const rankedUsers = sortedUsers.map((user, index) => {
     if (user.points < previousPoints) {
       currentRank = index + 1;
@@ -54,11 +60,9 @@ export default function LeaderboardPage() {
     };
   });
 
+  // Фільтрація за пошуком
   const filteredUsers = rankedUsers.filter((user) => {
-    const query = searchQuery.toLowerCase();
-    const nameMatch = user.name.toLowerCase().includes(query);
-    const usernameMatch = user.username.toLowerCase().includes(query);
-    return nameMatch || usernameMatch;
+    return user.email.toLowerCase().includes(searchQuery.toLowerCase());
   });
 
   const getRankStyle = (rank: number) => {
@@ -75,7 +79,7 @@ export default function LeaderboardPage() {
   };
 
   return (
-    <div className="flex flex-col h-full animate-fade-in bg-gray-900 px-3 pt-4 pb-4 ">
+    <div className="flex flex-col h-full animate-fade-in bg-gray-900 px-3 pt-4 pb-4">
       
       <div className="mb-6 flex items-center gap-3">
         <div className="p-3 bg-zinc-800 rounded-xl border border-zinc-700">
@@ -95,7 +99,7 @@ export default function LeaderboardPage() {
         </div>
         <input
           type="text"
-          placeholder="Знайти себе в таблиці..."
+          placeholder="Знайти себе за поштою..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="w-full bg-zinc-800/80 border border-zinc-700 text-zinc-100 rounded-xl py-3.5 pl-11 pr-4 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all placeholder:text-zinc-500 shadow-md shadow-black/20"
@@ -104,7 +108,11 @@ export default function LeaderboardPage() {
 
       {/* Таблиця (Список карток) */}
       <div className="flex flex-col gap-2.5">
-        {filteredUsers.length > 0 ? (
+        {loading ? (
+          <div className="text-center py-12 text-zinc-500 animate-pulse font-medium">
+            Завантаження результатів...
+          </div>
+        ) : filteredUsers.length > 0 ? (
           filteredUsers.map((user) => (
             <div 
               key={user.id} 
@@ -120,13 +128,8 @@ export default function LeaderboardPage() {
               {/* Інформація про гравця */}
               <div className="flex flex-col flex-1 min-w-0">
                 <span className="font-bold text-zinc-100 text-sm md:text-base truncate tracking-wide">
-                  {user.name}
+                  {user.email}
                 </span>
-                {user.username && (
-                  <span className="text-xs text-blue-400 font-medium opacity-90 truncate mt-0.5">
-                    {user.username}
-                  </span>
-                )}
               </div>
 
               {/* Бали */}

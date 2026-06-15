@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { ArrowLeft, Save, Clock, Users, ShieldAlert, Lock, CheckCircle } from 'lucide-react';
+import { ArrowLeft, Save, Clock, Users, ShieldAlert, Lock, CheckCircle, Trophy } from 'lucide-react';
 import { supabase } from '@/src/lib/supabase';
 
 export default function MatchPredictionPage() { 
@@ -11,6 +11,7 @@ export default function MatchPredictionPage() {
   const tournamentId = params?.id as string;
   const matchId = params?.matchId as string;
 
+  const [allPredictions, setAllPredictions] = useState<any[]>([]);
   const [match, setMatch] = useState<any>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [hasPrediction, setHasPrediction] = useState(false);
@@ -30,6 +31,7 @@ export default function MatchPredictionPage() {
 
         const numericMatchId = parseInt(matchId, 10);
         
+        // 1. Завантажуємо дані матчу
         const { data: matchData, error: matchError } = await supabase
           .from('matches')
           .select('*')
@@ -45,6 +47,25 @@ export default function MatchPredictionPage() {
         if (matchData) {
           setMatch(matchData);
 
+          // 2. Якщо матч вже почався або завершився — завантажуємо ВСІ прогнози + email з таблиці profiles
+          if (matchData.status !== 'scheduled') {
+            const { data: allPredsData, error: allPredsError } = await supabase
+              .from('predictions')
+              .select(`
+                id,
+                predicted_home_score,
+                predicted_away_score,
+                points_awarded,
+                profiles ( email )
+              `)
+              .eq('match_id', numericMatchId);
+
+            if (!allPredsError && allPredsData) {
+              setAllPredictions(allPredsData);
+            }
+          }
+
+          // 3. Завантажуємо прогноз поточного користувача (якщо він залогінений)
           if (user) {
             const { data: predData } = await supabase
               .from('predictions')
@@ -85,8 +106,6 @@ export default function MatchPredictionPage() {
     setIsSaving(true);
 
     try {
-      // Використовуємо .upsert()
-      // Supabase сам зрозуміє, що треба оновити, якщо унікальний ключ (user_id + match_id) вже існує
       const { error } = await supabase
         .from('predictions')
         .upsert({
@@ -95,7 +114,7 @@ export default function MatchPredictionPage() {
           predicted_home_score: parseInt(homeScore),
           predicted_away_score: parseInt(awayScore)
         }, {
-          onConflict: 'user_id, match_id' // Це вказує на унікальний індекс, який викликав помилку
+          onConflict: 'user_id, match_id'
         });
 
       if (error) throw error;
@@ -136,7 +155,6 @@ export default function MatchPredictionPage() {
         <span className="font-medium text-sm">До списку матчів</span>
       </Link>
 
-      {/* Решта коду без змін */}
       <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-6 mb-6 shadow-lg">
         <div className="flex justify-center items-center gap-2 mb-6">
           <Clock size={16} className="text-zinc-500" />
@@ -196,6 +214,63 @@ export default function MatchPredictionPage() {
           </button>
         )}
       </div>
+
+      {/* НОВИЙ БЛОК: СПИСОК УСІХ ПРОГНОЗІВ */}
+      <div>
+        <div className="flex items-center gap-2 mb-4 px-1">
+          <Users size={18} className="text-zinc-500" />
+          <h3 className="text-sm font-bold text-zinc-400 uppercase tracking-wider">
+            Прогнози ліги
+          </h3>
+        </div>
+        
+        {isPredictionLocked ? (
+          <div className="bg-zinc-900/40 rounded-2xl border border-zinc-800/60 p-4">
+            {allPredictions.length > 0 ? (
+              <ul className="flex flex-col gap-3">
+                {allPredictions.map((pred, index) => (
+                  <li key={pred.id || index} className="flex items-center justify-between bg-zinc-950/80 p-4 rounded-xl border border-zinc-800/80">
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium text-zinc-300">
+                        {pred.profiles?.email || 'Невідомий учасник'}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center gap-4">
+                      <div className="text-lg font-black text-zinc-100 tracking-wider">
+                        {pred.predicted_home_score} : {pred.predicted_away_score}
+                      </div>
+                      
+                      {match.status === 'finished' && (
+                        <div className={`flex items-center gap-1 text-xs font-bold px-2 py-1.5 rounded-lg ${
+                          (pred.points_awarded ?? 0) > 0 
+                            ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
+                            : 'bg-zinc-800 text-zinc-500 border border-zinc-700/50'
+                        }`}>
+                          {(pred.points_awarded ?? 0) > 0 && <Trophy size={12} />}
+                          {pred.points_awarded !== null ? `+${pred.points_awarded}` : '0'} б.
+                        </div>
+                      )}
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="text-center text-zinc-500 py-8 text-sm">
+                Ще немає прогнозів на цей матч.
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="bg-zinc-900/30 rounded-2xl border border-zinc-800/50 p-8 flex flex-col items-center justify-center text-center border-dashed">
+            <ShieldAlert className="text-zinc-700 mb-3" size={32} />
+            <p className="text-zinc-500 text-sm">
+              Прогнози інших учасників приховані до початку матчу.
+            </p>
+          </div>
+        )}
+      </div>
+
     </div>
   );
 }
