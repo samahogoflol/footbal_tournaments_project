@@ -1,10 +1,9 @@
-// src/components/Header.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Menu, X, Trophy, Users, ShieldCheck, LogIn, LogOut, User as UserIcon } from 'lucide-react';
+import { Menu, X, Trophy, Users, ShieldCheck, LogIn, LogOut, User as UserIcon, CalendarDays } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
 export default function Header() {
@@ -14,7 +13,6 @@ export default function Header() {
 
   const toggleMenu = () => setIsOpen(!isOpen);
 
-  // Перевіряємо стан авторизації
   useEffect(() => {
     const fetchUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
@@ -22,7 +20,6 @@ export default function Header() {
     };
     fetchUser();
 
-    // Слухач змін сесії (вхід/вихід)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user || null);
     });
@@ -37,7 +34,12 @@ export default function Header() {
     router.refresh();
   };
 
-  const menuItems = [
+  // Додай CalendarDays до імпортів з lucide-react
+
+
+
+const menuItems = [
+    { href: '/tournaments', label: 'Турніри', icon: CalendarDays }, 
     { href: '/users', label: 'Зареєстровані учасники', icon: Users },
     { href: '/leaderboards', label: 'Турнірна таблиця', icon: Trophy },
     { href: '/static/rules', label: 'Правила', icon: ShieldCheck },
