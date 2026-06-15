@@ -96,7 +96,6 @@ export default function GroupStagePage({ params }: { params: Promise<{ id: strin
             className="flex items-stretch justify-between p-4 bg-zinc-900/50 border border-zinc-800/80 rounded-2xl shadow-sm hover:bg-zinc-800/50 transition-colors group"
           >
             
-            {/* Команда 1 (Вдома) */}
             <div className="flex flex-col items-center gap-2 w-[35%]">
               <img 
                 src={`https://flagcdn.com/w40/${match.home_code}.png`} 
@@ -110,7 +109,7 @@ export default function GroupStagePage({ params }: { params: Promise<{ id: strin
             </div>
 
             {/* Центральний блок */}
-            <div className="flex flex-col items-center justify-center w-[30%] px-1">
+            <div className="flex flex-col items-center justify-center w-[35%] px-1">
               {match.status === 'finished' ? (
                 <div className="text-2xl font-black text-green-400 tracking-widest flex items-center justify-center bg-green-500/10 px-4 py-1.5 rounded-lg border border-green-500/20 w-full">
                   {match.home_score} : {match.away_score}
