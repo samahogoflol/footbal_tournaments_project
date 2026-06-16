@@ -17,7 +17,7 @@ export default function Footer() {
         
         <div className="flex flex-col items-center gap-2 mb-8">
           <h3 className="font-bold text-zinc-500 uppercase tracking-widest text-[11px] mb-3">
-            Навігація
+            Навігація 
           </h3>
           <nav className="flex flex-col items-center gap-4">
             {navLinks.map((link) => (
