@@ -82,43 +82,55 @@ export default function MatchPredictionPage() {
   }, [matchId]);
 
   const handleSavePrediction = async () => {
-    if (!currentUser || !match) return;
+  if (!currentUser || !match) return;
 
-    if (isTimePassed(match.match_date, match.match_time)) {
-      alert('⚠️ Прийом прогнозів закрито: час матчу настав!');
-      return;
-    }
+  if (isTimePassed(match.match_date, match.match_time)) {
+    alert('⚠️ Прийом прогнозів закрито: час матчу настав!');
+    return;
+  }
 
-    setIsSaving(true);
-    try {
-      const { error } = await supabase
-        .from('predictions')
-        .upsert({
-          user_id: currentUser.id,
-          match_id: parseInt(matchId, 10),
-          predicted_home_score: parseInt(homeScore),
-          predicted_away_score: parseInt(awayScore)
-        }, { onConflict: 'user_id, match_id' });
+  const home = parseInt(homeScore);
+  const away = parseInt(awayScore);
 
-      if (error) throw error;
-      
-      await fetchAllPredictions(parseInt(matchId, 10));
-      alert('Прогноз успішно збережено!');
-    } catch (error) {
-      console.error(error);
-      alert("⚠️ Неможливо зберегти: час матчу вже настав або збій з'єднання.");
-    } finally {
-      setIsSaving(false);
-    }
-  };
+  if (isNaN(home) || isNaN(away)) {
+    alert('Введіть коректний рахунок');
+    return;
+  }
+  if (isMatchFinished) {
+  alert('⚠️ Матч завершено — прогнози більше не приймаються!');
+  return;
+}
+
+  setIsSaving(true);
+  try {
+    const { error } = await supabase
+      .from('predictions')
+      .upsert({
+        user_id: currentUser.id,
+        match_id: parseInt(matchId, 10),
+        predicted_home_score: home,
+        predicted_away_score: away
+      }, { onConflict: 'user_id,match_id' });
+
+    if (error) throw error;
+
+    await fetchAllPredictions(parseInt(matchId, 10));
+    alert('Прогноз успішно збережено!');
+  } catch (error: any) {
+    console.error('Supabase error:', error);
+    alert(`⚠️ Помилка: ${error?.message || 'Невідома помилка'}`);
+  } finally {
+    setIsSaving(false);
+  }
+};
 
   if (loading) return <div className="flex h-full items-center justify-center text-zinc-500 bg-zinc-950">Завантаження...</div>;
   if (!match) return <div className="p-6 text-center text-red-400 bg-zinc-950">Матч не знайдено</div>;
-
-  const isLocked = isTimePassed(match.match_date, match.match_time);
   
   // Перевірка, чи є реальний результат матчу (щоб показати рахунок і бали)
   const isMatchFinished = match.status === 'finished' || (match.home_score !== null && match.home_score !== undefined);
+
+  const isLocked = isTimePassed(match.match_date, match.match_time) || isMatchFinished;
 
   return (
     <div className="flex flex-col h-full bg-zinc-950 px-4 pt-6 pb-12">
