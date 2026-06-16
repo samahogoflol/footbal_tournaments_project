@@ -23,7 +23,7 @@ export default function TournamentHubPage({ params }: { params: Promise<{ id: st
         },
         {
           title: "Плей-оф",
-          description: "Матчі на виліт (починаючи з 1/8 фіналу)",
+          description: "Матчі на виліт (починаючи з 1/16 фіналу)",
           href: `/tournaments/${tournamentId}/play-off`,
           icon: Trophy,
           color: "text-zinc-500",
