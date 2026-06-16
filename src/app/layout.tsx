@@ -5,7 +5,6 @@ import Header from "../components/Header";
 import { Mail } from "lucide-react";
 import Footer from "../components/Footer";
 import { TelegramIcon } from "../components/UI/TelegramIcon";
-import MigrationProvider from "../components/MigrationProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -28,9 +27,7 @@ export default function RootLayout({
 
           <Header />
 
-          <MigrationProvider>
             {children}
-          </MigrationProvider>
 
           <Footer/>
 

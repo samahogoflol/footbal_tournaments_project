@@ -26,7 +26,8 @@ export default function GroupStagePage() {
         .select('*')
         // РЕКОМЕНДАЦІЯ: Якщо у таблиці matches є колонка tournament_id, розкоментуй рядок нижче:
         // .eq('tournament_id', tournamentId) 
-        .order('id', { ascending: true });
+        .order('match_date', { ascending: true })
+        .order('match_time', { ascending: true });
 
       if (data) {
         setMatches(data);
