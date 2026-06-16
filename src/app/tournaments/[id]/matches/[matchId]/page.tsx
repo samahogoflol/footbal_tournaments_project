@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { ArrowLeft, Save, Clock, Users, ShieldAlert, Lock, CheckCircle, Trophy } from 'lucide-react';
+import { ArrowLeft, Clock, Users, Lock, Trophy, AlertCircle } from 'lucide-react';
 import { supabase } from '@/src/lib/supabase';
 
 export default function MatchPredictionPage() { 
@@ -14,97 +14,82 @@ export default function MatchPredictionPage() {
   const [allPredictions, setAllPredictions] = useState<any[]>([]);
   const [match, setMatch] = useState<any>(null);
   const [currentUser, setCurrentUser] = useState<any>(null);
-  const [hasPrediction, setHasPrediction] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   
   const [homeScore, setHomeScore] = useState<string>('');
   const [awayScore, setAwayScore] = useState<string>('');
 
+  // Функція для перевірки, чи настав час матчу (для блокування інпутів)
+  const isTimePassed = (date: string, time: string) => {
+    const matchTime = new Date(`${date}T${time}:00`);
+    const now = new Date();
+    return now >= matchTime;
+  };
+
+  async function fetchAllPredictions(numericMatchId: number) {
+    const { data } = await supabase
+      .from('predictions')
+      .select('id, predicted_home_score, predicted_away_score, points_awarded, profiles (email)')
+      .eq('match_id', numericMatchId)
+      .order('id', { ascending: false });
+      
+    if (data) setAllPredictions(data);
+  }
+
   useEffect(() => {
     async function loadData() {
       if (!matchId) return;
+      const numericMatchId = parseInt(matchId, 10);
 
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (user) setCurrentUser(user);
 
-        const numericMatchId = parseInt(matchId, 10);
-        
-        // 1. Завантажуємо дані матчу
-        const { data: matchData, error: matchError } = await supabase
+        const { data: matchData } = await supabase
           .from('matches')
           .select('*')
           .eq('id', numericMatchId)
           .single();
 
-        if (matchError) {
-          console.error("Деталі помилки бази даних:", matchError);
-          setLoading(false);
-          return;
-        }
-
         if (matchData) {
           setMatch(matchData);
+          
+          // Прогнози відкриті завжди
+          await fetchAllPredictions(numericMatchId);
 
-          // 2. Якщо матч вже почався або завершився — завантажуємо ВСІ прогнози + email з таблиці profiles
-          if (matchData.status !== 'scheduled') {
-            const { data: allPredsData, error: allPredsError } = await supabase
-              .from('predictions')
-              .select(`
-                id,
-                predicted_home_score,
-                predicted_away_score,
-                points_awarded,
-                profiles ( email )
-              `)
-              .eq('match_id', numericMatchId);
-
-            if (!allPredsError && allPredsData) {
-              setAllPredictions(allPredsData);
-            }
-          }
-
-          // 3. Завантажуємо прогноз поточного користувача (якщо він залогінений)
           if (user) {
             const { data: predData } = await supabase
               .from('predictions')
               .select('*')
               .eq('user_id', user.id)
-              .eq('match_id', numericMatchId)
+              .eq('match_id', matchData.id)
               .single();
 
             if (predData) {
-              setHasPrediction(true);
               setHomeScore(predData.predicted_home_score.toString());
               setAwayScore(predData.predicted_away_score.toString());
-            } else if (matchData.status === 'finished') {
-              setHomeScore(matchData.home_score?.toString() || '');
-              setAwayScore(matchData.away_score?.toString() || '');
             }
-          } else if (matchData.status === 'finished') {
-            setHomeScore(matchData.home_score?.toString() || '');
-            setAwayScore(matchData.away_score?.toString() || '');
           }
         }
       } catch (err) {
-        console.error("Критична помилка у loadData:", err);
+        console.error(err);
       } finally {
         setLoading(false);
       }
     }
-
     loadData();
   }, [matchId]);
 
   const handleSavePrediction = async () => {
-    if (!currentUser) {
-      alert('Будь ласка, увійдіть в акаунт!');
+    if (!currentUser || !match) return;
+
+    if (isTimePassed(match.match_date, match.match_time)) {
+      alert('⚠️ Прийом прогнозів закрито: час матчу настав!');
       return;
     }
 
     setIsSaving(true);
-
     try {
       const { error } = await supabase
         .from('predictions')
@@ -113,164 +98,119 @@ export default function MatchPredictionPage() {
           match_id: parseInt(matchId, 10),
           predicted_home_score: parseInt(homeScore),
           predicted_away_score: parseInt(awayScore)
-        }, {
-          onConflict: 'user_id, match_id'
-        });
+        }, { onConflict: 'user_id, match_id' });
 
       if (error) throw error;
-
-      setHasPrediction(true);
+      
+      await fetchAllPredictions(parseInt(matchId, 10));
       alert('Прогноз успішно збережено!');
-    } catch (error: any) {
-      console.error('Дані прогнозу перед помилкою:', {
-        user_id: currentUser?.id,
-        match_id: parseInt(matchId, 10),
-        home: parseInt(homeScore),
-        away: parseInt(awayScore)
-      });
-      console.error('Помилка від Supabase:', error);
-      alert('Помилка в консолі (F12)');
+    } catch (error) {
+      console.error(error);
+      alert("⚠️ Неможливо зберегти: час матчу вже настав або збій з'єднання.");
     } finally {
       setIsSaving(false);
     }
   };
 
-  if (loading) {
-    return <div className="flex h-full items-center justify-center text-zinc-500 animate-pulse bg-zinc-950">Завантаження матчу...</div>;
-  }
+  if (loading) return <div className="flex h-full items-center justify-center text-zinc-500 bg-zinc-950">Завантаження...</div>;
+  if (!match) return <div className="p-6 text-center text-red-400 bg-zinc-950">Матч не знайдено</div>;
 
-  if (!match) {
-    return <div className="p-6 text-center text-red-400 bg-zinc-950 h-full">Матч не знайдено</div>;
-  }
-
-  const isPredictionLocked = match.status !== 'scheduled';
+  const isLocked = isTimePassed(match.match_date, match.match_time);
+  
+  // Перевірка, чи є реальний результат матчу (щоб показати рахунок і бали)
+  const isMatchFinished = match.status === 'finished' || (match.home_score !== null && match.home_score !== undefined);
 
   return (
-    <div className="flex flex-col h-full animate-fade-in bg-zinc-950 px-3 pt-4 pb-8">
-      <Link 
-        href={`/tournaments/${tournamentId}/group-stage`} 
-        className="inline-flex items-center gap-2 text-zinc-400 hover:text-green-400 transition-colors w-fit mb-6"
-      >
-        <ArrowLeft size={20} />
-        <span className="font-medium text-sm">До списку матчів</span>
+    <div className="flex flex-col h-full bg-zinc-950 px-4 pt-6 pb-12">
+      <Link href={`/tournaments/${tournamentId}/group-stage`} className="inline-flex items-center gap-2 text-zinc-400 hover:text-green-400 transition-colors mb-8 group">
+        <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" /> 
+        <span className="text-sm font-medium">До списку матчів</span>
       </Link>
 
-      <div className="bg-zinc-900 rounded-2xl border border-zinc-800 p-6 mb-6 shadow-lg">
-        <div className="flex justify-center items-center gap-2 mb-6">
-          <Clock size={16} className="text-zinc-500" />
-          <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">
-            {match.match_date} • {match.match_time}
-          </span>
+      <div className="bg-zinc-900 rounded-3xl border border-zinc-800 p-8 mb-6 shadow-2xl">
+        <div className="flex justify-center items-center gap-3 mb-8">
+          <Clock size={18} className="text-zinc-500" />
+          <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">{match.match_date} • {match.match_time}</span>
         </div>
 
-        <div className="flex items-center justify-between">
-          <div className="flex flex-col items-center gap-3 w-[40%]">
-            <img src={`https://flagcdn.com/w80/${match.home_code}.png`} alt={match.home_team} className="w-16 md:w-20 h-auto rounded-md shadow-md object-cover" />
-            <span className="text-zinc-100 font-black text-sm md:text-base uppercase tracking-wider text-center">{match.home_team}</span>
+        <div className="flex justify-between items-center gap-4">
+          <div className="flex flex-col items-center gap-3 w-1/3">
+            <img src={`https://flagcdn.com/w160/${match.home_code}.png`} className="w-20 h-12 object-cover rounded-lg shadow-lg" alt={match.home_team} />
+            <span className="text-zinc-100 font-bold text-sm uppercase text-center">{match.home_team}</span>
           </div>
 
-          <div className="w-[20%] text-center flex flex-col items-center justify-center">
-            {match.status === 'finished' ? (
-              <div className="text-2xl md:text-3xl font-black text-green-400 tracking-wider bg-green-500/10 border border-green-500/20 px-3 py-1 rounded-xl whitespace-nowrap">
-                {match.home_score} : {match.away_score}
+          <div className="text-center w-1/3 flex justify-center items-center">
+            {isMatchFinished ? (
+              <div className="text-3xl font-black text-green-400 bg-green-500/10 px-4 py-2 rounded-2xl border border-green-500/20 tracking-wider flex items-center whitespace-nowrap gap-2">
+                {match.home_score} <span className="text-green-500/50">:</span> {match.away_score}
               </div>
-            ) : match.status === 'live' ? (
-              <div className="text-xs font-bold text-red-500 uppercase bg-red-500/10 border border-red-500/20 px-2 py-1 rounded-md animate-pulse">Матч йде</div>
             ) : (
-              <div className="text-2xl font-black text-zinc-700">VS</div>
+              <div className="text-3xl font-black text-zinc-700">VS</div>
             )}
           </div>
 
-          <div className="flex flex-col items-center gap-3 w-[40%]">
-            <img src={`https://flagcdn.com/w80/${match.away_code}.png`} alt={match.away_team} className="w-16 md:w-20 h-auto rounded-md shadow-md object-cover" />
-            <span className="text-zinc-100 font-black text-sm md:text-base uppercase tracking-wider text-center">{match.away_team}</span>
+          <div className="flex flex-col items-center gap-3 w-1/3">
+            <img src={`https://flagcdn.com/w160/${match.away_code}.png`} className="w-20 h-12 object-cover rounded-lg shadow-lg" alt={match.away_team} />
+            <span className="text-zinc-100 font-bold text-sm uppercase text-center">{match.away_team}</span>
           </div>
         </div>
       </div>
 
-      <div className="bg-zinc-900/50 rounded-2xl border border-zinc-800/80 p-5 mb-8">
-        <h3 className="text-center text-sm font-bold text-zinc-400 uppercase tracking-widest mb-5 flex items-center justify-center gap-2">
-          {isPredictionLocked && <Lock size={14} className="text-amber-500" />}
-          {isPredictionLocked ? 'Прогноз (Прийом закрито)' : 'Твій прогноз'}
+      <div className="bg-zinc-900/50 rounded-3xl border border-zinc-800 p-6 mb-8">
+        <h3 className="text-center text-xs font-bold text-zinc-500 uppercase tracking-widest mb-6 flex items-center justify-center gap-2">
+          {isLocked ? <Lock size={14} /> : <Trophy size={14} />}
+          {isLocked ? 'Прийом прогнозів закрито' : 'Ваш прогноз'}
         </h3>
         
-        <div className="flex justify-center items-center gap-4 mb-6">
-          <input type="number" min="0" max="20" value={homeScore} onChange={(e) => setHomeScore(e.target.value)} disabled={isPredictionLocked} className="w-20 h-20 bg-zinc-950 border-2 border-zinc-800 disabled:opacity-50 disabled:bg-zinc-900 rounded-xl text-center text-4xl font-black text-zinc-100 focus:border-green-500 focus:ring-0 outline-none transition-colors" placeholder="-" />
-          <span className="text-xl font-bold text-zinc-600">:</span>
-          <input type="number" min="0" max="20" value={awayScore} onChange={(e) => setAwayScore(e.target.value)} disabled={isPredictionLocked} className="w-20 h-20 bg-zinc-950 border-2 border-zinc-800 disabled:opacity-50 disabled:bg-zinc-900 rounded-xl text-center text-4xl font-black text-zinc-100 focus:border-green-500 focus:ring-0 outline-none transition-colors" placeholder="-" />
+        <div className="flex justify-center items-center gap-6 mb-8">
+          <input type="number" value={homeScore} onChange={(e) => setHomeScore(e.target.value)} disabled={isLocked} className="w-24 h-24 bg-zinc-950 border border-zinc-800 rounded-2xl text-center text-5xl font-black text-white focus:border-green-500 outline-none transition-all" placeholder="0" />
+          <span className="text-2xl text-zinc-700 font-bold">:</span>
+          <input type="number" value={awayScore} onChange={(e) => setAwayScore(e.target.value)} disabled={isLocked} className="w-24 h-24 bg-zinc-950 border border-zinc-800 rounded-2xl text-center text-5xl font-black text-white focus:border-green-500 outline-none transition-all" placeholder="0" />
         </div>
 
-        {isPredictionLocked ? (
-          <div className="w-full flex items-center justify-center gap-2 bg-zinc-800 text-zinc-500 font-bold py-4 rounded-xl border border-zinc-700/50 cursor-not-allowed">
-            <Lock size={20} /> Прийом прогнозів завершено
-          </div>
-        ) : (
+        {!isLocked && (
           <button 
             onClick={handleSavePrediction}
             disabled={homeScore === '' || awayScore === '' || isSaving}
-            className={`w-full flex items-center justify-center gap-2 text-white font-bold py-4 rounded-xl transition-colors ${hasPrediction ? 'bg-blue-600 hover:bg-blue-500' : 'bg-green-600 hover:bg-green-500'}`}
+            className="w-full bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white font-bold py-4 rounded-2xl transition-all shadow-lg shadow-green-900/20"
           >
-            {isSaving ? 'Збереження...' : hasPrediction ? 'Оновити прогноз' : 'Зберегти прогноз'}
+            {isSaving ? 'Збереження...' : 'Підтвердити прогноз'}
           </button>
         )}
       </div>
 
-      {/* НОВИЙ БЛОК: СПИСОК УСІХ ПРОГНОЗІВ */}
-      <div>
-        <div className="flex items-center gap-2 mb-4 px-1">
-          <Users size={18} className="text-zinc-500" />
-          <h3 className="text-sm font-bold text-zinc-400 uppercase tracking-wider">
-            Прогнози ліги
-          </h3>
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 text-zinc-400">
+          <Users size={16} />
+          <h3 className="text-xs font-bold uppercase tracking-wider">Прогнози ліги ({allPredictions.length})</h3>
         </div>
-        
-        {isPredictionLocked ? (
-          <div className="bg-zinc-900/40 rounded-2xl border border-zinc-800/60 p-4">
-            {allPredictions.length > 0 ? (
-              <ul className="flex flex-col gap-3">
-                {allPredictions.map((pred, index) => (
-                  <li key={pred.id || index} className="flex items-center justify-between bg-zinc-950/80 p-4 rounded-xl border border-zinc-800/80">
-                    <div className="flex flex-col">
-                      <span className="text-sm font-medium text-zinc-300">
-                        {pred.profiles?.email || 'Невідомий учасник'}
-                      </span>
-                    </div>
-                    
-                    <div className="flex items-center gap-4">
-                      <div className="text-lg font-black text-zinc-100 tracking-wider">
-                        {pred.predicted_home_score} : {pred.predicted_away_score}
-                      </div>
-                      
-                      {match.status === 'finished' && (
-                        <div className={`flex items-center gap-1 text-xs font-bold px-2 py-1.5 rounded-lg ${
-                          (pred.points_awarded ?? 0) > 0 
-                            ? 'bg-green-500/20 text-green-400 border border-green-500/30' 
-                            : 'bg-zinc-800 text-zinc-500 border border-zinc-700/50'
-                        }`}>
-                          {(pred.points_awarded ?? 0) > 0 && <Trophy size={12} />}
-                          {pred.points_awarded !== null ? `+${pred.points_awarded}` : '0'} б.
-                        </div>
-                      )}
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <div className="text-center text-zinc-500 py-8 text-sm">
-                Ще немає прогнозів на цей матч.
+        <div className="space-y-2">
+          {allPredictions.length > 0 ? allPredictions.map((pred) => (
+            <div key={pred.id} className="flex justify-between items-center bg-zinc-900 p-4 rounded-2xl border border-zinc-800">
+              <span className="text-zinc-400 text-sm truncate mr-4">{pred.profiles?.email}</span>
+              <div className="flex items-center gap-4 shrink-0">
+                <span className="font-black text-white text-lg tabular-nums">{pred.predicted_home_score} : {pred.predicted_away_score}</span>
+                
+                {/* Відображення балів, якщо матч ДІЙСНО завершено */}
+                {isMatchFinished && (
+                  <span className={`text-xs font-bold px-2.5 py-1 rounded-lg min-w-[35px] text-center ${
+                    (pred.points_awarded ?? 0) > 0 
+                      ? 'text-green-400 bg-green-500/10 border border-green-500/20' 
+                      : 'text-zinc-500 bg-zinc-800'
+                  }`}>
+                    {(pred.points_awarded ?? 0) > 0 ? `+${pred.points_awarded}` : '0'}
+                  </span>
+                )}
               </div>
-            )}
-          </div>
-        ) : (
-          <div className="bg-zinc-900/30 rounded-2xl border border-zinc-800/50 p-8 flex flex-col items-center justify-center text-center border-dashed">
-            <ShieldAlert className="text-zinc-700 mb-3" size={32} />
-            <p className="text-zinc-500 text-sm">
-              Прогнози інших учасників приховані до початку матчу.
-            </p>
-          </div>
-        )}
+            </div>
+          )) : (
+            <div className="text-center py-8 text-zinc-600 flex flex-col items-center gap-2">
+              <AlertCircle size={24} />
+              <p className="text-sm">Прогнозів ще немає. Будь першим!</p>
+            </div>
+          )}
+        </div>
       </div>
-
     </div>
   );
 }
