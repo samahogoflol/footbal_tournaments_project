@@ -55,7 +55,6 @@ export default function MatchPredictionPage() {
         if (matchData) {
           setMatch(matchData);
           
-          // Прогнози відкриті завжди
           await fetchAllPredictions(numericMatchId);
 
           if (user) {
