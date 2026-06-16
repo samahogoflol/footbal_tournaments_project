@@ -20,7 +20,6 @@ export default function MatchPredictionPage() {
   const [homeScore, setHomeScore] = useState<string>('');
   const [awayScore, setAwayScore] = useState<string>('');
 
-  // Функція для перевірки, чи настав час матчу (для блокування інпутів)
   const isTimePassed = (date: string, time: string) => {
     const matchTime = new Date(`${date}T${time}:00`);
     const now = new Date();
@@ -80,25 +79,34 @@ export default function MatchPredictionPage() {
     loadData();
   }, [matchId]);
 
+  const isMatchFinished = !!match && (match.status === 'finished' || (match.home_score !== null && match.home_score !== undefined));
+
   const handleSavePrediction = async () => {
-  if (!currentUser || !match) return;
 
-  if (isTimePassed(match.match_date, match.match_time)) {
-    alert('⚠️ Прийом прогнозів закрито: час матчу настав!');
+    if (!currentUser) {
+    alert('⚠️ Потрібно авторизуватись для того, щоб робити прогнози');
+    return;
+    }
+    if (!match) return;
+
+    if (!currentUser || !match) return;
+
+    if (isTimePassed(match.match_date, match.match_time)) {
+      alert('⚠️ Прийом прогнозів закрито: час матчу настав!');
+      return;
+    }
+
+    const home = parseInt(homeScore);
+    const away = parseInt(awayScore);
+
+    if (isNaN(home) || isNaN(away)) {
+      alert('Введіть коректний рахунок');
+      return;
+    }
+    if (isMatchFinished) {
+    alert('⚠️ Матч завершено — прогнози більше не приймаються!');
     return;
   }
-
-  const home = parseInt(homeScore);
-  const away = parseInt(awayScore);
-
-  if (isNaN(home) || isNaN(away)) {
-    alert('Введіть коректний рахунок');
-    return;
-  }
-  if (isMatchFinished) {
-  alert('⚠️ Матч завершено — прогнози більше не приймаються!');
-  return;
-}
 
   setIsSaving(true);
   try {
@@ -126,9 +134,6 @@ export default function MatchPredictionPage() {
   if (loading) return <div className="flex h-full items-center justify-center text-zinc-500 bg-zinc-950">Завантаження...</div>;
   if (!match) return <div className="p-6 text-center text-red-400 bg-zinc-950">Матч не знайдено</div>;
   
-  // Перевірка, чи є реальний результат матчу (щоб показати рахунок і бали)
-  const isMatchFinished = match.status === 'finished' || (match.home_score !== null && match.home_score !== undefined);
-
   const isLocked = isTimePassed(match.match_date, match.match_time) || isMatchFinished;
 
   return (
@@ -174,18 +179,18 @@ export default function MatchPredictionPage() {
         </h3>
         
         <div className="flex justify-center items-center gap-6 mb-8">
-          <input type="number" value={homeScore} onChange={(e) => setHomeScore(e.target.value)} disabled={isLocked} className="w-24 h-24 bg-zinc-950 border border-zinc-800 rounded-2xl text-center text-5xl font-black text-white focus:border-green-500 outline-none transition-all" placeholder="0" />
+          <input disabled={isLocked || !currentUser} type="number" value={homeScore} onChange={(e) => setHomeScore(e.target.value)} className="w-24 h-24 bg-zinc-950 border border-zinc-800 rounded-2xl text-center text-5xl font-black text-white focus:border-green-500 outline-none transition-all" placeholder="0" />
           <span className="text-2xl text-zinc-700 font-bold">:</span>
-          <input type="number" value={awayScore} onChange={(e) => setAwayScore(e.target.value)} disabled={isLocked} className="w-24 h-24 bg-zinc-950 border border-zinc-800 rounded-2xl text-center text-5xl font-black text-white focus:border-green-500 outline-none transition-all" placeholder="0" />
+          <input disabled={isLocked || !currentUser} type="number" value={awayScore} onChange={(e) => setAwayScore(e.target.value)} className="w-24 h-24 bg-zinc-950 border border-zinc-800 rounded-2xl text-center text-5xl font-black text-white focus:border-green-500 outline-none transition-all" placeholder="0" />
         </div>
 
         {!isLocked && (
-          <button 
+          <button
             onClick={handleSavePrediction}
-            disabled={homeScore === '' || awayScore === '' || isSaving}
+            disabled={(!currentUser) ? false : (homeScore === '' || awayScore === '' || isSaving)}
             className="w-full bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white font-bold py-4 rounded-2xl transition-all shadow-lg shadow-green-900/20"
           >
-            {isSaving ? 'Збереження...' : 'Підтвердити прогноз'}
+            {!currentUser ? 'Увійти, щоб зробити прогноз' : isSaving ? 'Збереження...' : 'Підтвердити прогноз'}
           </button>
         )}
       </div>
