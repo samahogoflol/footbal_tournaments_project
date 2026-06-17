@@ -43,9 +43,19 @@ export default function TournamentHubPage({ params }: { params: Promise<{ id: st
           color: "text-blue-400",
           bgColor: "bg-blue-500/10 border-blue-500/20",
           status: "active"
+        },
+        {
+          title: "Турнірна таблиця прогнозистів",
+          description: "Позиція в таблиці учасників турніру",
+          href: `/leaderboards`,
+          icon: Table,
+          color: "text-blue-400",
+          bgColor: "bg-blue-500/10 border-blue-500/20",
+          status: "active"
         }
       ]
-    }
+    },
+
   ];
 
   return (
