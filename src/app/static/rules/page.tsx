@@ -17,8 +17,6 @@ export default function RulesPage() {
       </div>
 
       <div className="flex flex-col gap-4">
-        
-        {/* Правило 1: 3 бали */}
         <div className="flex items-start gap-4 bg-zinc-800/40 border border-zinc-700/50 p-5 rounded-2xl shadow-sm">
           <div className="p-2.5 bg-yellow-500/10 rounded-lg border border-yellow-500/20 shrink-0">
             <Target className="text-yellow-500" size={24} />
@@ -33,7 +31,6 @@ export default function RulesPage() {
           </div>
         </div>
 
-        {/* Правило 2: 1 бал */}
         <div className="flex items-start gap-4 bg-zinc-800/40 border border-zinc-700/50 p-5 rounded-2xl shadow-sm">
           <div className="p-2.5 bg-green-500/10 rounded-lg border border-green-500/20 shrink-0">
             <CheckCircle2 className="text-green-400" size={24} />
@@ -58,7 +55,7 @@ export default function RulesPage() {
               Дедлайн прийому
             </span>
             <p className="text-zinc-400 text-sm leading-relaxed">
-              Прогнози приймаються щонайменше за <span className="text-red-400 font-bold">5 хвилин</span> до стартового свистка. Коментарі, залишені або відредаговані пізніше, враховуватися не будуть.
+              Прогнози приймаються щонайменше за <span className="text-red-400 font-bold">5 хвилин</span> до стартового свистка. Коментарі, залишені пізніше, або ті коментарі, які було відредаговано враховуватися не будуть.
             </p>
           </div>
         </div>
@@ -72,8 +69,8 @@ export default function RulesPage() {
               Як зробити прогноз
             </span>
             <p className="text-zinc-400 text-sm leading-relaxed">
-              Залишайте свій прогноз виключно <span className="text-blue-400 font-medium">в коментарях під постом</span> до відповідного матчу 
-              в нашому Telegram-каналі.
+              Залишайте свій прогноз виключно в коментарях під постомдо відповідного матчу 
+              в нашому <a href="https://t.me/santiago_munez_football" target='_blank' className='text-blue-400 font-medium'>Telegram-каналі.</a>
             </p>
           </div>
         </div>

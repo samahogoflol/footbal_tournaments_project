@@ -4,7 +4,6 @@ import MatchesClientBoard from './MatchesClientBoard';
 export default async function GroupStagePage({ params }: { params: { id: string } }) {
   const tournamentId = params.id;
 
-  // Серверний запит: Next.js автоматично покаже loading.tsx, поки чекає на цей await
   const { data: matches, error } = await supabase
     .from('matches')
     .select('*')
@@ -16,7 +15,7 @@ export default async function GroupStagePage({ params }: { params: { id: string 
   }
 
   return (
-    // Передаємо готові дані у наш майбутній клієнтський компонент
+
     <MatchesClientBoard 
       initialMatches={matches || []} 
       tournamentId={tournamentId} 
