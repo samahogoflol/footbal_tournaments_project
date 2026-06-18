@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/src/utils/utils/supabase'
+import { createClient } from '@/src/utils/supabase'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
@@ -51,7 +51,7 @@ export async function resetPassword(email: string) {
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `https://footbal-tournaments-project.vercel.app/auth/callback`,
-      // redirectTo: `http://localhost:3000/auth/update-password`,
+      // redirectTo: `http://localhost:3000/auth/callback`,
     });
 
     if (error) {

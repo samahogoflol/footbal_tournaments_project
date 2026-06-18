@@ -23,7 +23,7 @@ export default function RootLayout({
   return (
     <html lang="uk">
       <body className={`${inter.className} bg-gray-100 text-gray-900 antialiased`}>
-        <div className="max-w-md mx-auto min-h-screen bg-white relative shadow-xl flex flex-col">
+        <div className="max-w-md mx-auto min-h-screen bg-zinc-900 relative shadow-xl flex flex-col">
 
           <Header />
 

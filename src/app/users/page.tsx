@@ -1,4 +1,4 @@
-import { createClient } from '@/src/utils/utils/supabase';
+import { createClient } from '@/src/utils/supabase';
 import UsersListClient from './users-list-client';
 
 export default async function UsersPage() {
