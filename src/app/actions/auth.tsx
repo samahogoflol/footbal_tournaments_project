@@ -68,3 +68,13 @@ export async function resetPassword(email: string) {
     return { success: false, error: err?.message || 'Щось зламалося на сервері' };
   }
 }
+
+export async function logout() {
+  const supabase = await createClient();
+
+  await supabase.auth.signOut();
+  
+  revalidatePath('/', 'layout');
+
+  redirect('/login');
+}

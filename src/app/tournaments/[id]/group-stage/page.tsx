@@ -1,8 +1,9 @@
 import { supabase } from '@/src/lib/supabase';
 import MatchesClientBoard from './MatchesClientBoard';
 
-export default async function GroupStagePage({ params }: { params: { id: string } }) {
-  const tournamentId = params.id;
+export default async function GroupStagePage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = await params;
+  const tournamentId = resolvedParams.id;
 
   const { data: matches, error } = await supabase
     .from('matches')

@@ -2,14 +2,18 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { Menu, X, Trophy, Users, ShieldCheck, LogIn, LogOut, User as UserIcon, CalendarDays } from 'lucide-react';
-import { supabase } from '../lib/supabase';
+import { createBrowserClient } from '@supabase/ssr';
+import { logout } from '../app/actions/auth';
 
 export default function Header() {
-  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
+
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
 
   const toggleMenu = () => setIsOpen(!isOpen);
 
@@ -25,20 +29,15 @@ export default function Header() {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [supabase]);
 
+  // Наш новий хендлер виходу
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    setIsOpen(false);
-    router.push('/tournaments');
-    router.refresh();
+    setIsOpen(false); // Спочатку ховаємо меню
+    await logout();   // Потім викликаємо серверний екшен для повного очищення сесії
   };
 
-  // Додай CalendarDays до імпортів з lucide-react
-
-
-
-const menuItems = [
+  const menuItems = [
     { href: '/tournaments', label: 'Турніри', icon: CalendarDays }, 
     { href: '/users', label: 'Зареєстровані учасники', icon: Users },
     { href: '/leaderboards', label: 'Турнірна таблиця', icon: Trophy },
@@ -61,7 +60,6 @@ const menuItems = [
           </h1>
         </Link>
 
-        {/* Динамічна іконка: Профіль або Вхід */}
         {user ? (
           <div className="shrink-0 group cursor-pointer" onClick={toggleMenu}>
             <div className="w-10 h-10 bg-zinc-800 rounded-full flex items-center justify-center border border-zinc-700 text-green-400 shadow-inner group-hover:border-green-500 transition-colors">
