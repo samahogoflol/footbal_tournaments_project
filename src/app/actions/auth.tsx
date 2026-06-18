@@ -44,3 +44,27 @@ export async function signup(formData: FormData) {
   revalidatePath('/', 'layout')
   redirect('/tournaments')
 }
+
+export async function resetPassword(email: string) {
+  try {
+    const supabase = await createClient();
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `https://footbal-tournaments-project.vercel.app/auth/update-password`,
+      // redirectTo: `http://localhost:3000/auth/update-password`,
+    });
+
+    if (error) {
+      console.error('Supabase Reset Error:', error); // Це покаже детальну помилку в терміналі VS Code
+      return { 
+        success: false, 
+        error: error.message || JSON.stringify(error) || 'Помилка скидання пароля' 
+      };
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    console.error('Server catch error:', err);
+    return { success: false, error: err?.message || 'Щось зламалося на сервері' };
+  }
+}

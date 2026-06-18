@@ -69,7 +69,7 @@ const menuItems = [
             </div>
           </div>
         ) : (
-          <Link href="/login" className="shrink-0 group">
+          <Link href="/auth/login" className="shrink-0 group">
             <div className="w-10 h-10 bg-green-500/10 rounded-full flex items-center justify-center border border-green-500/30 text-green-500 shadow-inner group-hover:bg-green-500 group-hover:text-white transition-all">
               <LogIn size={20} className="relative left-0.5" />
             </div>

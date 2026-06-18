@@ -1,5 +1,5 @@
 import AuthForm from '@/src/components/AuthForm';
-import { signup } from '../actions/auth';
+import { signup } from '../../actions/auth';
 
 export default function RegistrationPage() {
   return (
