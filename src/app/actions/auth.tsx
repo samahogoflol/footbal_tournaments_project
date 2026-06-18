@@ -14,9 +14,9 @@ export async function login(formData: FormData) {
     email,
     password,
   })
-
+  
   if (error) {
-    throw new Error('Помилка входу')
+    return { error: 'Невірний email або пароль' }
   }
 
   revalidatePath('/', 'layout')
@@ -38,7 +38,7 @@ export async function signup(formData: FormData) {
   })
 
   if (error) {
-    throw new Error('Помилка реєстрації')
+    return { error: 'Помилка реєстрації. Можливо, такий email вже існує.' }
   }
 
   revalidatePath('/', 'layout')

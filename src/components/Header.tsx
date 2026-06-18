@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation'; 
 import { Menu, X, Trophy, Users, ShieldCheck, LogIn, LogOut, User as UserIcon, CalendarDays } from 'lucide-react';
 import { createBrowserClient } from '@supabase/ssr';
 import { logout } from '../app/actions/auth';
@@ -9,6 +10,7 @@ import { logout } from '../app/actions/auth';
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
+  const pathname = usePathname(); 
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -22,6 +24,7 @@ export default function Header() {
       const { data: { session } } = await supabase.auth.getSession();
       setUser(session?.user || null);
     };
+    
     fetchUser();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -29,12 +32,13 @@ export default function Header() {
     });
 
     return () => subscription.unsubscribe();
-  }, [supabase]);
+  }, [pathname, supabase]); 
 
-  // Наш новий хендлер виходу
   const handleLogout = async () => {
-    setIsOpen(false); // Спочатку ховаємо меню
-    await logout();   // Потім викликаємо серверний екшен для повного очищення сесії
+    setIsOpen(false); 
+    setUser(null); 
+    await supabase.auth.signOut(); 
+    await logout();   
   };
 
   const menuItems = [
@@ -82,7 +86,6 @@ export default function Header() {
         />
       )}
 
-      {/* Бокова панель */}
       <div
         className={`fixed inset-y-0 left-0 z-50 w-72 bg-zinc-900 border-r border-zinc-800 flex flex-col shadow-2xl transform transition-transform duration-300 ease-in-out ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
@@ -115,7 +118,6 @@ export default function Header() {
           })}
         </nav>
 
-        {/* Кнопка виходу (тільки для авторизованих) */}
         {user && (
           <div className="mt-auto p-4 border-t border-zinc-800">
             <div className="px-4 py-2 mb-2 text-xs text-zinc-500 truncate">

@@ -4,29 +4,27 @@ import { useState } from 'react';
 
 interface AuthFormProps {
   type: 'login' | 'registration';
-  action: (formData: FormData) => Promise<void>;
-  // Додаємо опціональний екшен для відновлення пароля, якщо захочеш зробити його через сервер
+  action: (formData: FormData) => Promise<{ error?: string } | void | never>;
   onResetPassword?: (email: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 export default function AuthForm({ type, action, onResetPassword }: AuthFormProps) {
   const isLogin = type === 'login';
   const [showPassword, setShowPassword] = useState(false);
-  
-  // Стан для модалки відновлення пароля
+  const [authError, setAuthError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [lastEmail, setLastEmail] = useState(''); 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
   const [resetStatus, setResetStatus] = useState<{ type: 'success' | 'error' | null; message: string }>({ type: null, message: '' });
   const [isSending, setIsSending] = useState(false);
 
-  // Хендлер для відправки листа відновлення
   const handleResetSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSending(true);
     setResetStatus({ type: null, message: '' });
 
     try {
-      // Якщо передано функцію через props, викликаємо її
       if (onResetPassword) {
         const res = await onResetPassword(resetEmail);
         if (res.success) {
@@ -36,7 +34,6 @@ export default function AuthForm({ type, action, onResetPassword }: AuthFormProp
           setResetStatus({ type: 'error', message: res.error || 'Щось пішло не так.' });
         }
       } else {
-        // Тимчасова заглушка, якщо екшен ще не підключений
         setResetStatus({ type: 'success', message: 'Запит надіслано! (Підключіть Supabase auth.resetPasswordForEmail)' });
       }
     } catch (err) {
@@ -46,17 +43,38 @@ export default function AuthForm({ type, action, onResetPassword }: AuthFormProp
     }
   };
 
+  const clientAction = async (formData: FormData) => {
+    setIsSubmitting(true);
+    setAuthError(null); 
+    
+    setLastEmail(formData.get('email') as string || '');
+
+    const result = await action(formData);
+
+    if (result?.error) {
+      setAuthError(result.error);
+      setIsSubmitting(false); 
+    }
+  };
+
   return (
     <>
-      <form action={action} className="w-full max-w-md bg-zinc-900 p-10 rounded-2xl border border-zinc-800 shadow-2xl">
+      <form action={clientAction} className="w-full max-w-md bg-zinc-900 p-10 rounded-2xl border border-zinc-800 shadow-2xl">
         <h1 className="text-3xl font-bold text-white mb-8 text-center">
           {isLogin ? 'Вхід' : 'Реєстрація'}
         </h1>
+        
+        {authError && (
+          <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400 text-sm text-center font-medium animate-fadeIn">
+            {authError}
+          </div>
+        )}
         
         <input 
           name="email" 
           type="email" 
           placeholder="Email" 
+          defaultValue={lastEmail} 
           className="w-full p-4 mb-5 bg-zinc-800 rounded-xl text-white text-base border border-zinc-700 focus:border-green-500 outline-none transition-colors" 
           required 
         />
@@ -102,14 +120,17 @@ export default function AuthForm({ type, action, onResetPassword }: AuthFormProp
         
         <button 
           type="submit" 
-          className={`w-full font-bold py-4 rounded-xl text-base transition-transform active:scale-95 ${isLogin ? 'bg-green-500 text-black' : 'bg-blue-500 text-white'}`}
+          disabled={isSubmitting}
+          className={`w-full font-bold py-4 rounded-xl text-base transition-transform active:scale-95 disabled:opacity-50 disabled:scale-100 ${isLogin ? 'bg-green-500 text-black' : 'bg-blue-500 text-white'}`}
         >
-          {isLogin ? 'Увійти' : 'Створити акаунт'}
+          {isSubmitting 
+            ? 'Зачекайте...' 
+            : isLogin ? 'Увійти' : 'Створити акаунт'}
         </button>
 
         <p className="text-zinc-400 text-sm mt-6 text-center">
           {isLogin ? 'Немає акаунту? ' : 'Вже маєте акаунт? '}
-          <a href={isLogin ? 'registration' : 'login'} className="text-white font-medium hover:underline">
+          <a href={isLogin ? 'registration' : '/auth/login'} className="text-white font-medium hover:underline">
             {isLogin ? 'Зареєструватися' : 'Увійти'}
           </a>
         </p>
