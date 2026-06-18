@@ -4,12 +4,17 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { ArrowLeft, Clock, Users, Lock, Trophy, AlertCircle } from 'lucide-react';
-import { supabase } from '@/src/lib/supabase';
+import { createBrowserClient } from '@supabase/ssr';
 
 export default function MatchPredictionPage() { 
   const params = useParams(); 
   const tournamentId = params?.id as string;
   const matchId = params?.matchId as string;
+
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
 
   const [allPredictions, setAllPredictions] = useState<any[]>([]);
   const [match, setMatch] = useState<any>(null);
@@ -82,14 +87,12 @@ export default function MatchPredictionPage() {
   const isMatchFinished = !!match && (match.status === 'finished' || (match.home_score !== null && match.home_score !== undefined));
 
   const handleSavePrediction = async () => {
-
     if (!currentUser) {
-    alert('⚠️ Потрібно авторизуватись для того, щоб робити прогнози');
-    return;
+      alert('⚠️ Потрібно авторизуватись для того, щоб робити прогнози');
+      return;
     }
+    
     if (!match) return;
-
-    if (!currentUser || !match) return;
 
     if (isTimePassed(match.match_date, match.match_time)) {
       alert('⚠️ Прийом прогнозів закрито: час матчу настав!');
@@ -104,32 +107,32 @@ export default function MatchPredictionPage() {
       return;
     }
     if (isMatchFinished) {
-    alert('⚠️ Матч завершено — прогнози більше не приймаються!');
-    return;
-  }
+      alert('⚠️ Матч завершено — прогнози більше не приймаються!');
+      return;
+    }
 
-  setIsSaving(true);
-  try {
-    const { error } = await supabase
-      .from('predictions')
-      .upsert({
-        user_id: currentUser.id,
-        match_id: parseInt(matchId, 10),
-        predicted_home_score: home,
-        predicted_away_score: away
-      }, { onConflict: 'user_id,match_id' });
+    setIsSaving(true);
+    try {
+      const { error } = await supabase
+        .from('predictions')
+        .upsert({
+          user_id: currentUser.id,
+          match_id: parseInt(matchId, 10),
+          predicted_home_score: home,
+          predicted_away_score: away
+        }, { onConflict: 'user_id,match_id' });
 
-    if (error) throw error;
+      if (error) throw error;
 
-    await fetchAllPredictions(parseInt(matchId, 10));
-    alert('Прогноз успішно збережено!');
-  } catch (error: any) {
-    console.error('Supabase error:', error);
-    alert(`⚠️ Помилка: ${error?.message || 'Невідома помилка'}`);
-  } finally {
-    setIsSaving(false);
-  }
-};
+      await fetchAllPredictions(parseInt(matchId, 10));
+      alert('Прогноз успішно збережено!');
+    } catch (error: any) {
+      console.error('Supabase error:', error);
+      alert(`⚠️ Помилка: ${error?.message || 'Невідома помилка'}`);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   if (loading) return <div className="flex h-full items-center justify-center text-zinc-500 bg-zinc-950">Завантаження...</div>;
   if (!match) return <div className="p-6 text-center text-red-400 bg-zinc-950">Матч не знайдено</div>;
@@ -207,7 +210,6 @@ export default function MatchPredictionPage() {
               <div className="flex items-center gap-4 shrink-0">
                 <span className="font-black text-white text-lg tabular-nums">{pred.predicted_home_score} : {pred.predicted_away_score}</span>
                 
-                {/* Відображення балів, якщо матч ДІЙСНО завершено */}
                 {isMatchFinished && (
                   <span className={`text-xs font-bold px-2.5 py-1 rounded-lg min-w-[35px] text-center ${
                     (pred.points_awarded ?? 0) > 0 

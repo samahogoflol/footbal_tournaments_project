@@ -55,7 +55,7 @@ export async function resetPassword(email: string) {
     });
 
     if (error) {
-      console.error('Supabase Reset Error:', error); // Це покаже детальну помилку в терміналі VS Code
+      console.error('Supabase Reset Error:', error); 
       return { 
         success: false, 
         error: error.message || JSON.stringify(error) || 'Помилка скидання пароля' 
