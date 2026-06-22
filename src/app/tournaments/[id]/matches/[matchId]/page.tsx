@@ -6,8 +6,8 @@ import { useParams } from 'next/navigation';
 import { ArrowLeft, Clock, Users, Lock, Trophy, AlertCircle } from 'lucide-react';
 import { createBrowserClient } from '@supabase/ssr';
 
-export default function MatchPredictionPage() { 
-  const params = useParams(); 
+export default function MatchPredictionPage() {
+  const params = useParams();
   const tournamentId = params?.id as string;
   const matchId = params?.matchId as string;
 
@@ -21,7 +21,7 @@ export default function MatchPredictionPage() {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  
+
   const [homeScore, setHomeScore] = useState<string>('');
   const [awayScore, setAwayScore] = useState<string>('');
 
@@ -37,7 +37,7 @@ export default function MatchPredictionPage() {
       .select('id, predicted_home_score, predicted_away_score, points_awarded, profiles (email)')
       .eq('match_id', numericMatchId)
       .order('id', { ascending: false });
-      
+
     if (data) setAllPredictions(data);
   }
 
@@ -58,7 +58,6 @@ export default function MatchPredictionPage() {
 
         if (matchData) {
           setMatch(matchData);
-          
           await fetchAllPredictions(numericMatchId);
 
           if (user) {
@@ -84,18 +83,34 @@ export default function MatchPredictionPage() {
     loadData();
   }, [matchId]);
 
-  const isMatchFinished = !!match && (match.status === 'finished' || (match.home_score !== null && match.home_score !== undefined));
+  // --- Похідні стани (рахуються лише коли match вже завантажений) ---
+  const isMatchLive = !!match && match.status === 'live';
+  const isMatchFinished = !!match && match.status === 'finished';
+  const isMatchStartedByTime = !!match && isTimePassed(match.match_date, match.match_time);
+
+  // Блокуємо інпути й кнопку, якщо матч вже почався (за статусом або за часом) чи завершився
+  const isLocked = isMatchLive || isMatchFinished || isMatchStartedByTime;
 
   const handleSavePrediction = async () => {
     if (!currentUser) {
       alert('⚠️ Потрібно авторизуватись для того, щоб робити прогнози');
       return;
     }
-    
+
     if (!match) return;
 
+    if (match.status === 'finished') {
+      alert('⚠️ Матч вже завершився — прогнози більше не приймаються');
+      return;
+    }
+
+    if (match.status === 'live') {
+      alert('⚠️ Матч вже почався — прогнози більше не приймаються');
+      return;
+    }
+
     if (isTimePassed(match.match_date, match.match_time)) {
-      alert('⚠️ Прийом прогнозів закрито: час матчу настав!');
+      alert('⚠️ Час матчу настав — прийом прогнозів закрито');
       return;
     }
 
@@ -104,10 +119,6 @@ export default function MatchPredictionPage() {
 
     if (isNaN(home) || isNaN(away)) {
       alert('Введіть коректний рахунок');
-      return;
-    }
-    if (isMatchFinished) {
-      alert('⚠️ Матч завершено — прогнози більше не приймаються!');
       return;
     }
 
@@ -128,7 +139,13 @@ export default function MatchPredictionPage() {
       alert('Прогноз успішно збережено!');
     } catch (error: any) {
       console.error('Supabase error:', error);
-      alert(`⚠️ Помилка: ${error?.message || 'Невідома помилка'}`);
+
+      // Якщо запит відхилила база (RLS policy) — покажемо зрозуміле повідомлення
+      if (error?.message?.includes('row-level security') || error?.code === '42501') {
+        alert('⚠️ Прийом прогнозів на цей матч закрито');
+      } else {
+        alert(`⚠️ Помилка: ${error?.message || 'Невідома помилка'}`);
+      }
     } finally {
       setIsSaving(false);
     }
@@ -136,13 +153,11 @@ export default function MatchPredictionPage() {
 
   if (loading) return <div className="flex h-full items-center justify-center text-zinc-500 bg-zinc-950">Завантаження...</div>;
   if (!match) return <div className="p-6 text-center text-red-400 bg-zinc-950">Матч не знайдено</div>;
-  
-  const isLocked = isTimePassed(match.match_date, match.match_time) || isMatchFinished;
 
   return (
     <div className="flex flex-col h-full bg-zinc-950 px-4 pt-6 pb-12">
       <Link href={`/tournaments/${tournamentId}/group-stage`} className="inline-flex items-center gap-2 text-zinc-400 hover:text-green-400 transition-colors mb-8 group">
-        <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" /> 
+        <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
         <span className="text-sm font-medium">До списку матчів</span>
       </Link>
 
@@ -159,7 +174,7 @@ export default function MatchPredictionPage() {
           </div>
 
           <div className="text-center w-1/3 flex justify-center items-center">
-            {isMatchFinished ? (
+            {isMatchFinished || isMatchLive ? (
               <div className="text-3xl font-black text-green-400 bg-green-500/10 px-4 py-2 rounded-2xl border border-green-500/20 tracking-wider flex items-center whitespace-nowrap gap-2">
                 {match.home_score} <span className="text-green-500/50">:</span> {match.away_score}
               </div>
@@ -178,9 +193,15 @@ export default function MatchPredictionPage() {
       <div className="bg-zinc-900/50 rounded-3xl border border-zinc-800 p-6 mb-8">
         <h3 className="text-center text-xs font-bold text-zinc-500 uppercase tracking-widest mb-6 flex items-center justify-center gap-2">
           {isLocked ? <Lock size={14} /> : <Trophy size={14} />}
-          {isLocked ? 'Прийом прогнозів закрито' : 'Ваш прогноз'}
+          {isMatchLive
+            ? 'Матч вже триває'
+            : isMatchFinished
+            ? 'Матч завершено'
+            : isLocked
+            ? 'Прийом прогнозів закрито'
+            : 'Ваш прогноз'}
         </h3>
-        
+
         <div className="flex justify-center items-center gap-6 mb-8">
           <input disabled={isLocked || !currentUser} type="number" value={homeScore} onChange={(e) => setHomeScore(e.target.value)} className="w-24 h-24 bg-zinc-950 border border-zinc-800 rounded-2xl text-center text-5xl font-black text-white focus:border-green-500 outline-none transition-all" placeholder="0" />
           <span className="text-2xl text-zinc-700 font-bold">:</span>
@@ -209,11 +230,11 @@ export default function MatchPredictionPage() {
               <span className="text-zinc-400 text-sm truncate mr-4">{pred.profiles?.email}</span>
               <div className="flex items-center gap-4 shrink-0">
                 <span className="font-black text-white text-lg tabular-nums">{pred.predicted_home_score} : {pred.predicted_away_score}</span>
-                
+
                 {isMatchFinished && (
                   <span className={`text-xs font-bold px-2.5 py-1 rounded-lg min-w-[35px] text-center ${
-                    (pred.points_awarded ?? 0) > 0 
-                      ? 'text-green-400 bg-green-500/10 border border-green-500/20' 
+                    (pred.points_awarded ?? 0) > 0
+                      ? 'text-green-400 bg-green-500/10 border border-green-500/20'
                       : 'text-zinc-500 bg-zinc-800'
                   }`}>
                     {(pred.points_awarded ?? 0) > 0 ? `+${pred.points_awarded}` : '0'}

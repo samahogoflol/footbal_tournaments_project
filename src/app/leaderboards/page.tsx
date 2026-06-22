@@ -22,7 +22,6 @@ export default function LeaderboardPage() {
         }
 
         if (data) {
-          // Форматуємо дані для таблиці
           const formattedData = data.map(profile => ({
             id: profile.id,
             email: profile.email || 'Невідомий учасник',

@@ -65,11 +65,11 @@ export default function Header() {
         </Link>
 
         {user ? (
-          <div className="shrink-0 group cursor-pointer" onClick={toggleMenu}>
+          <Link href="/profile" className="shrink-0 group cursor-pointer">
             <div className="w-10 h-10 bg-zinc-800 rounded-full flex items-center justify-center border border-zinc-700 text-green-400 shadow-inner group-hover:border-green-500 transition-colors">
               <UserIcon size={20} />
             </div>
-          </div>
+          </Link>
         ) : (
           <Link href="/auth/login" className="shrink-0 group">
             <div className="w-10 h-10 bg-green-500/10 rounded-full flex items-center justify-center border border-green-500/30 text-green-500 shadow-inner group-hover:bg-green-500 group-hover:text-white transition-all">
