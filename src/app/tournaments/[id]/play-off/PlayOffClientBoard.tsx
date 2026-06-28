@@ -17,9 +17,22 @@ const ROUNDS = [
   { value: 8, label: 'Фінал' },
 ];
 
+function parseMatchDateTime(dateStr: string, timeStr: string): number {
+  if (!dateStr || !timeStr) return 0;
+
+  const [day, month] = dateStr.split('.').map(Number);
+  const [hours, minutes] = timeStr.split(':').map(Number);
+
+  return new Date(2026, (month || 1) - 1, day || 1, hours || 0, minutes || 0).getTime();
+}
+
 export default function PlayOffClientBoard({ initialMatches, tournamentId }: MatchesClientBoardProps) {
 
-  const availableRounds = new Set(initialMatches.map((match) => match.round));
+  const sortedMatches = [...initialMatches].sort(
+    (a, b) => parseMatchDateTime(a.match_date, a.match_time) - parseMatchDateTime(b.match_date, b.match_time)
+  );
+
+  const availableRounds = new Set(sortedMatches.map((match) => match.round));
 
   const [activeRound, setActiveRound] = useState<number>(() => {
     if (typeof window === 'undefined') return 4;
@@ -27,7 +40,7 @@ export default function PlayOffClientBoard({ initialMatches, tournamentId }: Mat
     return availableRounds.has(saved) ? saved : 4;
   });
 
-  const filteredMatches = initialMatches.filter((match) => match.round === activeRound);
+  const filteredMatches = sortedMatches.filter((match) => match.round === activeRound);
   const scrollKey = `matches-scroll-${tournamentId}`;
 
   useEffect(() => {
