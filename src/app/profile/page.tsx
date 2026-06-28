@@ -187,7 +187,7 @@
 
 export default function ProfilePage() {
   return (
-    <div>
+    <div className="text-white">
       Сторінка розробляється...
     </div>
   )

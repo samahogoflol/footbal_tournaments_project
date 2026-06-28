@@ -26,9 +26,9 @@ export default function TournamentHubPage({ params }: { params: Promise<{ id: st
           description: "Матчі на виліт (починаючи з 1/16 фіналу)",
           href: `/tournaments/${tournamentId}/play-off`,
           icon: Trophy,
-          color: "text-zinc-500",
-          bgColor: "bg-zinc-800 border-zinc-700",
-          status: "locked"
+          color: "text-green-400",
+          bgColor: "bg-green-500/10 border-green-500/20",
+          status: "active"
         }
       ]
     },

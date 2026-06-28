@@ -83,12 +83,10 @@ export default function MatchPredictionPage() {
     loadData();
   }, [matchId]);
 
-  // --- Похідні стани (рахуються лише коли match вже завантажений) ---
   const isMatchLive = !!match && match.status === 'live';
   const isMatchFinished = !!match && match.status === 'finished';
   const isMatchStartedByTime = !!match && isTimePassed(match.match_date, match.match_time);
 
-  // Блокуємо інпути й кнопку, якщо матч вже почався (за статусом або за часом) чи завершився
   const isLocked = isMatchLive || isMatchFinished || isMatchStartedByTime;
 
   const handleSavePrediction = async () => {
@@ -140,7 +138,6 @@ export default function MatchPredictionPage() {
     } catch (error: any) {
       console.error('Supabase error:', error);
 
-      // Якщо запит відхилила база (RLS policy) — покажемо зрозуміле повідомлення
       if (error?.message?.includes('row-level security') || error?.code === '42501') {
         alert('⚠️ Прийом прогнозів на цей матч закрито');
       } else {
@@ -154,9 +151,13 @@ export default function MatchPredictionPage() {
   if (loading) return <div className="flex h-full items-center justify-center text-zinc-500 bg-zinc-950">Завантаження...</div>;
   if (!match) return <div className="p-6 text-center text-red-400 bg-zinc-950">Матч не знайдено</div>;
 
+  const backHref = match.round >= 4
+    ? `/tournaments/${tournamentId}/play-off`
+    : `/tournaments/${tournamentId}/group-stage`;
+
   return (
     <div className="flex flex-col h-full bg-zinc-950 px-4 pt-6 pb-12">
-      <Link href={`/tournaments/${tournamentId}/group-stage`} className="inline-flex items-center gap-2 text-zinc-400 hover:text-green-400 transition-colors mb-8 group">
+      <Link href={backHref} className="inline-flex items-center gap-2 text-zinc-400 hover:text-green-400 transition-colors mb-8 group">
         <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
         <span className="text-sm font-medium">До списку матчів</span>
       </Link>

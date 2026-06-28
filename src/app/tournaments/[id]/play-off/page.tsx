@@ -1,9 +1,24 @@
-export default function TablePage() {
+import { supabase } from '@/src/lib/supabase';
+import PlayOffClientBoard from './PlayOffClientBoard';
+
+export default async function PlayOffPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id: tournamentId } = await params;
+
+  const { data: matches, error } = await supabase
+    .from('matches')
+    .select('*')
+    .gte('round', 4)
+    .order('match_date', { ascending: true })
+    .order('match_time', { ascending: true });
+
+  if (error) {
+    console.error("Помилка завантаження матчів плей-офф:", error);
+  }
+
   return (
-    <div className="flex flex-col items-center justify-center h-full py-20 animate-fade-in bg-gray-900 rounded-xl border border-zinc-800 border-dashed">
-      <span className="text-4xl mb-4 block">⚽</span>
-      {/* <h2 className="text-2xl font-bold text-zinc-100 mb-2">Турнірна таблиця</h2> */}
-      <p className="text-zinc-400 font-medium">Сторінка в розробці 🚧</p>
-    </div>
+    <PlayOffClientBoard
+      initialMatches={matches || []}
+      tournamentId={tournamentId}
+    />
   );
 }
