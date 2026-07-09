@@ -7,7 +7,7 @@ export default async function UsersPage() {
   const { data: users } = await supabase
     .from('profiles')
     .select('id, username, full_name, total_points, email')
-    .order('total_points', { ascending: false }); // Сортуємо за очками (якщо це лідерборд)
+    .order('total_points', { ascending: false }); 
 
   return <UsersListClient initialUsers={users || []} />;
 }
