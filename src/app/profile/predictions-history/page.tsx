@@ -21,32 +21,48 @@ export default function PredictionsHistoryPage() {
       
       if(user) {
         const { data, error } = await supabase
-          .from('predictions')
-          .select(`
-            id,
-            predicted_home_score,
-            predicted_away_score,
-            points_awarded,
-            updated_at,
-            matches (
-              home_team,
-              away_team,
-              home_code,
-              away_code,
-              match_date,
-              home_score,
-              away_score,
-              status
-            )
-          `)
-          .eq('user_id', user.id)
-          .order('updated_at', { ascending: false });
+            .from('predictions')
+            .select(`
+                id,
+                predicted_home_score,
+                predicted_away_score,
+                points_awarded,
+                updated_at,
+                matches (
+                home_team,
+                away_team,
+                home_code,
+                away_code,
+                match_date,
+                match_time,
+                home_score,
+                away_score,
+                status
+                )
+            `)
+            .eq('user_id', user.id)
+            .order('id', { ascending: false });
 
-        if (error) {
-          console.error('Помилка завантаження історії:', error);
-        } else {
-          setHistory(data || []);
-        }
+        if (!error && data) {
+            const sorted = [...data].sort((a, b) => {
+                const matchA = a.matches as any;
+                const matchB = b.matches as any;
+
+                if (!matchA || !matchB) return 0;
+
+                const [dayA, monthA] = matchA.match_date.split('.').map(Number);
+                const [dayB, monthB] = matchB.match_date.split('.').map(Number);
+                const [hA, mA] = matchA.match_time.split(':').map(Number);
+                const [hB, mB] = matchB.match_time.split(':').map(Number);
+
+                const dateA = new Date(2026, monthA - 1, dayA, hA, mA).getTime();
+                const dateB = new Date(2026, monthB - 1, dayB, hB, mB).getTime();
+
+                return dateB - dateA; // Від нових до старих
+            });
+
+  setHistory(sorted);
+}
       }
       setLoadingHistory(false);
     }

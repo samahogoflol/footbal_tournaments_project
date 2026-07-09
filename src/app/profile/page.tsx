@@ -59,6 +59,7 @@ export default function ProfilePage() {
               home_code,
               away_code,
               match_date,
+              match_time,
               home_score,
               away_score,
               status
@@ -66,9 +67,25 @@ export default function ProfilePage() {
           `)
           .eq('user_id', user.id)
           .order('updated_at', { ascending: false })
-          .limit(3);
 
-        if (!historyError) setHistory(historyData || []);
+        if (!historyError && historyData) {
+          const sorted = [...historyData].sort((a, b) => {
+            const matchA = a.matches as any;
+            const matchB = b.matches as any;
+            if (!matchA || !matchB) return 0;
+
+            const [dayA, monthA] = matchA.match_date.split('.').map(Number);
+            const [dayB, monthB] = matchB.match_date.split('.').map(Number);
+            const [hA, mA] = matchA.match_time.split(':').map(Number);
+            const [hB, mB] = matchB.match_time.split(':').map(Number);
+
+            const dateA = new Date(2026, monthA - 1, dayA, hA, mA).getTime();
+            const dateB = new Date(2026, monthB - 1, dayB, hB, mB).getTime();
+
+            return dateB - dateA;
+          });
+          setHistory(sorted.slice(0, 3)); 
+        }
 
         const { data: tournamentsList } = await supabase
           .from('tournaments')
