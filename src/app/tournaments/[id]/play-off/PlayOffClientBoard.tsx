@@ -14,6 +14,7 @@ const ROUNDS = [
   { value: 5, label: '1/8' },
   { value: 6, label: '1/4' },
   { value: 7, label: '1/2' },
+  { value: 9, label: '3-тє місце' },
   { value: 8, label: 'Фінал' },
 ];
 
