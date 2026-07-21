@@ -36,15 +36,6 @@ export default function TournamentHubPage({ params }: { params: Promise<{ id: st
       title: "Статистика турніру",
       items: [
         {
-          title: "Реальна турнірна таблиця",
-          description: "Офіційне становище команд у групах",
-          href: `/tournaments/${tournamentId}/real-table`,
-          icon: Table,
-          color: "text-blue-400",
-          bgColor: "bg-blue-500/10 border-blue-500/20",
-          status: "active"
-        },
-        {
           title: "Турнірна таблиця прогнозистів",
           description: "Позиція в таблиці учасників турніру",
           href: `/leaderboards`,
