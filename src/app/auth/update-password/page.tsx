@@ -15,7 +15,7 @@ export default function UpdatePasswordPage() {
     e.preventDefault();
     setIsSaving(true);
 
-    const { error } = await supabase.auth.updateUser({ password });
+    
 
     if (error) {
       setStatus('error');

@@ -137,6 +137,7 @@ export default function ProfilePage() {
     const { error } = await supabase.auth.updateUser({ password: newPassword });
 
     if (error) {
+      console.error("Помилка оновлення пароля:", error.message);
       setPasswordStatus('error');
     } else {
       setPasswordStatus('success');
