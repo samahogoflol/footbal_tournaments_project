@@ -50,7 +50,7 @@ export async function resetPassword(email: string) {
     const supabase = await createClient();
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `https://footbal-tournaments-project.vercel.app/auth/callback`,
+      redirectTo: `https://www.munez.pp.ua/auth/callback`,
       // redirectTo: `http://localhost:3000/auth/callback`,
     });
 
