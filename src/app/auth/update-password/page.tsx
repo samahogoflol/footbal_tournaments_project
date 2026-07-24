@@ -14,10 +14,11 @@ export default function UpdatePasswordPage() {
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
-
     
+    const { error } = await supabase.auth.updateUser({ password });
 
     if (error) {
+      console.error("Помилка оновлення пароля:", error.message);
       setStatus('error');
     } else {
       setStatus('success');
