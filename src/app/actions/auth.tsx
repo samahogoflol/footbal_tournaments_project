@@ -48,11 +48,7 @@ export async function signup(formData: FormData) {
 export async function resetPassword(email: string) {
   try {
     const supabase = await createClient();
-
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `https://www.munez.pp.ua/auth/callback`,
-      // redirectTo: `http://localhost:3000/auth/callback`,
-    });
+    const { error } = await supabase.auth.resetPasswordForEmail(email);
 
     if (error) {
       console.error('Supabase Reset Error:', error); 

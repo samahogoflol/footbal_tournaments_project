@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { createBrowserSupabaseClient } from '@/src/utils/supabase-browser';
 
 interface AuthFormProps {
   type: 'login' | 'registration';
@@ -9,15 +10,32 @@ interface AuthFormProps {
 }
 
 export default function AuthForm({ type, action, onResetPassword }: AuthFormProps) {
+  const supabase = createBrowserSupabaseClient();
   const isLogin = type === 'login';
+  
   const [showPassword, setShowPassword] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [lastEmail, setLastEmail] = useState(''); 
+  
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [resetStep, setResetStep] = useState<'email' | 'otp' | 'password'>('email');
   const [resetEmail, setResetEmail] = useState('');
+  const [otp, setOtp] = useState('');
+  const [newPassword, setNewPassword] = useState('');
   const [resetStatus, setResetStatus] = useState<{ type: 'success' | 'error' | null; message: string }>({ type: null, message: '' });
   const [isSending, setIsSending] = useState(false);
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+    setTimeout(() => {
+      setResetStep('email');
+      setResetEmail('');
+      setOtp('');
+      setNewPassword('');
+      setResetStatus({ type: null, message: '' });
+    }, 300);
+  };
 
   const handleResetSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,13 +46,11 @@ export default function AuthForm({ type, action, onResetPassword }: AuthFormProp
       if (onResetPassword) {
         const res = await onResetPassword(resetEmail);
         if (res.success) {
-          setResetStatus({ type: 'success', message: 'Посилання для оновлення паролю надіслано на вашу пошту!' });
-          setResetEmail('');
+          setResetStatus({ type: 'success', message: 'Код для оновлення паролю надіслано на вашу пошту!' });
+          setResetStep('otp');
         } else {
           setResetStatus({ type: 'error', message: res.error || 'Щось пішло не так.' });
         }
-      } else {
-        setResetStatus({ type: 'success', message: 'Запит надіслано! (Підключіть Supabase auth.resetPasswordForEmail)' });
       }
     } catch (err) {
       setResetStatus({ type: 'error', message: 'Сталася помилка при відправці.' });
@@ -43,10 +59,47 @@ export default function AuthForm({ type, action, onResetPassword }: AuthFormProp
     }
   };
 
+  const handleVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSending(true);
+    setResetStatus({ type: null, message: '' });
+
+    const { error } = await supabase.auth.verifyOtp({
+      email: resetEmail,
+      token: otp,
+      type: 'recovery',
+    });
+
+    if (error) {
+      setResetStatus({ type: 'error', message: 'Невірний код. Спробуйте ще раз.' });
+    } else {
+      setResetStatus({ type: 'success', message: 'Код підтверджено!' });
+      setResetStep('password');
+    }
+    setIsSending(false);
+  };
+
+  const handleUpdatePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSending(true);
+    setResetStatus({ type: null, message: '' });
+
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+
+    if (error) {
+      setResetStatus({ type: 'error', message: 'Помилка оновлення пароля.' });
+    } else {
+      setResetStatus({ type: 'success', message: 'Пароль успішно змінено! Тепер ви можете увійти.' });
+      setTimeout(() => {
+        closeModal();
+      }, 2000);
+    }
+    setIsSending(false);
+  };
+
   const clientAction = async (formData: FormData) => {
     setIsSubmitting(true);
     setAuthError(null); 
-    
     setLastEmail(formData.get('email') as string || '');
 
     const result = await action(formData);
@@ -142,7 +195,7 @@ export default function AuthForm({ type, action, onResetPassword }: AuthFormProp
 
             <button 
               type="button"
-              onClick={() => setIsModalOpen(false)}
+              onClick={closeModal}
               className="absolute right-4 top-4 text-zinc-400 hover:text-white transition-colors"
             >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
@@ -151,35 +204,94 @@ export default function AuthForm({ type, action, onResetPassword }: AuthFormProp
             </button>
 
             <h2 className="text-2xl font-bold text-white mb-3 text-center">Відновлення пароля</h2>
-            <p className="text-zinc-400 text-sm mb-6 text-center">
-              Введіть ваш Email, і ми надішлемо вам посилання для зміни пароля.
-            </p>
 
-            <form onSubmit={handleResetSubmit} className="space-y-4">
-              <input 
-                type="email" 
-                placeholder="Email" 
-                value={resetEmail}
-                onChange={(e) => setResetEmail(e.target.value)}
-                className="w-full p-4 bg-zinc-800 rounded-xl text-white text-base border border-zinc-700 focus:border-green-500 outline-none transition-colors" 
-                required 
-                disabled={isSending}
-              />
+            {resetStatus.type && (
+              <div className={`mb-4 p-3 rounded-lg text-sm text-center ${resetStatus.type === 'success' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
+                {resetStatus.message}
+              </div>
+            )}
 
-              {resetStatus.type && (
-                <div className={`p-3 rounded-lg text-sm text-center ${resetStatus.type === 'success' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
-                  {resetStatus.message}
-                </div>
-              )}
+            {resetStep === 'email' && (
+              <>
+                <p className="text-zinc-400 text-sm mb-6 text-center">
+                  Введіть ваш Email, і ми надішлемо вам код для зміни пароля.
+                </p>
+                <form onSubmit={handleResetSubmit} className="space-y-4">
+                  <input 
+                    type="email" 
+                    placeholder="Email" 
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                    className="w-full p-4 bg-zinc-800 rounded-xl text-white text-base border border-zinc-700 focus:border-green-500 outline-none transition-colors" 
+                    required 
+                    disabled={isSending}
+                  />
+                  <button 
+                    type="submit" 
+                    disabled={isSending || !resetEmail}
+                    className="w-full font-bold py-4 rounded-xl text-base bg-green-500 text-black transition-transform active:scale-95 disabled:opacity-50 disabled:scale-100"
+                  >
+                    {isSending ? 'Надсилання...' : 'Отримати код'}
+                  </button>
+                </form>
+              </>
+            )}
 
-              <button 
-                type="submit" 
-                disabled={isSending}
-                className="w-full font-bold py-4 rounded-xl text-base bg-green-500 text-black transition-transform active:scale-95 disabled:opacity-50 disabled:scale-100"
-              >
-                {isSending ? 'Надсилання...' : 'Надіслати'}
-              </button>
-            </form>
+            {resetStep === 'otp' && (
+              <>
+                <p className="text-zinc-400 text-sm mb-6 text-center">
+                  Введіть 8-значний код, який ми відправили на {resetEmail}
+                </p>
+                <form onSubmit={handleVerifyOtp} className="space-y-4">
+                  <input 
+                    type="text" 
+                    placeholder="12345678" 
+                    value={otp}
+                    onChange={(e) => setOtp(e.target.value)}
+                    className="w-full p-4 bg-zinc-800 rounded-xl text-white text-xl text-center tracking-widest border border-zinc-700 focus:border-green-500 outline-none transition-colors" 
+                    required 
+                    minLength={8}
+                    maxLength={8}
+                    disabled={isSending}
+                  />
+                  <button 
+                    type="submit" 
+                    disabled={isSending || otp.length < 6}
+                    className="w-full font-bold py-4 rounded-xl text-base bg-green-500 text-black transition-transform active:scale-95 disabled:opacity-50 disabled:scale-100"
+                  >
+                    {isSending ? 'Перевірка...' : 'Підтвердити'}
+                  </button>
+                </form>
+              </>
+            )}
+
+            {resetStep === 'password' && (
+              <>
+                <p className="text-zinc-400 text-sm mb-6 text-center">
+                  Придумайте новий надійний пароль.
+                </p>
+                <form onSubmit={handleUpdatePassword} className="space-y-4">
+                  <input 
+                    type="password" 
+                    placeholder="Новий пароль" 
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    className="w-full p-4 bg-zinc-800 rounded-xl text-white text-base border border-zinc-700 focus:border-green-500 outline-none transition-colors" 
+                    required 
+                    minLength={6}
+                    disabled={isSending}
+                  />
+                  <button 
+                    type="submit" 
+                    disabled={isSending || newPassword.length < 6}
+                    className="w-full font-bold py-4 rounded-xl text-base bg-green-500 text-black transition-transform active:scale-95 disabled:opacity-50 disabled:scale-100"
+                  >
+                    {isSending ? 'Збереження...' : 'Зберегти пароль'}
+                  </button>
+                </form>
+              </>
+            )}
+
           </div>
         </div>
       )}
