@@ -1,155 +1,73 @@
-'use client';
-
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
-import { ArrowLeft, Clock, Users, Lock, Trophy, AlertCircle } from 'lucide-react';
-import { createBrowserClient } from '@supabase/ssr';
+import { ArrowLeft, Clock, Users, Lock, AlertCircle } from 'lucide-react';
+import { createClient } from '@/src/utils/supabase';
+import PredictionForm from '@/src/components/PredictionForm';
 
-export default function MatchPredictionPage() {
-  const params = useParams();
-  const tournamentId = params?.id as string;
-  const matchId = params?.matchId as string;
+export default async function MatchPredictionPage({
+  params,
+}: {
+  params: Promise<{ id: string; matchId: string }>;
+}) {
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  const resolvedParams = await params;
+  const tournamentId = resolvedParams.id;
+  const matchIdString = resolvedParams.matchId;
+  const numericMatchId = parseInt(matchIdString, 10);
 
-  const [allPredictions, setAllPredictions] = useState<any[]>([]);
-  const [match, setMatch] = useState<any>(null);
-  const [currentUser, setCurrentUser] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
+  const supabase = await createClient();
 
-  const [homeScore, setHomeScore] = useState<string>('');
-  const [awayScore, setAwayScore] = useState<string>('');
+  const { data: { user } } = await supabase.auth.getUser();
 
+  const { data: match } = await supabase
+    .from('matches')
+    .select('*')
+    .eq('id', numericMatchId)
+    .single();
+
+  if (!match) {
+    return <div className="p-6 text-center text-red-400 bg-zinc-950 h-full flex items-center justify-center">Матч не знайдено</div>;
+  }
+
+  const { data: rawPredictions } = await supabase
+    .from('predictions')
+    .select('id, user_id, predicted_home_score, predicted_away_score, points_awarded, profiles (email)')
+    .eq('match_id', numericMatchId)
+    .order('id', { ascending: false });
+
+  let userPrediction = null;
+  if (user) {
+    const { data: predData } = await supabase
+      .from('predictions')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('match_id', numericMatchId)
+      .single();
+    userPrediction = predData;
+  }
+
+  const isMatchLive = match.status === 'live';
+  const isMatchFinished = match.status === 'finished';
+  
   const isTimePassed = (date: string, time: string) => {
     const matchTime = new Date(`${date}T${time}:00`);
     const now = new Date();
     return now >= matchTime;
   };
-
-  async function fetchAllPredictions(numericMatchId: number) {
-    const { data } = await supabase
-      .from('predictions')
-      .select('id, predicted_home_score, predicted_away_score, points_awarded, profiles (email)')
-      .eq('match_id', numericMatchId)
-      .order('id', { ascending: false });
-
-    if (data) setAllPredictions(data);
-  }
-
-  useEffect(() => {
-    async function loadData() {
-      if (!matchId) return;
-      const numericMatchId = parseInt(matchId, 10);
-
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) setCurrentUser(user);
-
-        const { data: matchData } = await supabase
-          .from('matches')
-          .select('*')
-          .eq('id', numericMatchId)
-          .single();
-
-        if (matchData) {
-          setMatch(matchData);
-          await fetchAllPredictions(numericMatchId);
-
-          if (user) {
-            const { data: predData } = await supabase
-              .from('predictions')
-              .select('*')
-              .eq('user_id', user.id)
-              .eq('match_id', matchData.id)
-              .single();
-
-            if (predData) {
-              setHomeScore(predData.predicted_home_score.toString());
-              setAwayScore(predData.predicted_away_score.toString());
-            }
-          }
-        }
-      } catch (err) {
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    loadData();
-  }, [matchId]);
-
-  const isMatchLive = !!match && match.status === 'live';
-  const isMatchFinished = !!match && match.status === 'finished';
-  const isMatchStartedByTime = !!match && isTimePassed(match.match_date, match.match_time);
-
+  const isMatchStartedByTime = isTimePassed(match.match_date, match.match_time);
   const isLocked = isMatchLive || isMatchFinished || isMatchStartedByTime;
 
-  const handleSavePrediction = async () => {
-    if (!currentUser) {
-      alert('⚠️ Потрібно авторизуватись для того, щоб робити прогнози');
-      return;
+  const allPredictions = (rawPredictions || []).map((pred) => {
+    const isMyPrediction = user && pred.user_id === user.id;
+    
+    if (!isLocked && !isMyPrediction) {
+      return {
+        ...pred,
+        predicted_home_score: null,
+        predicted_away_score: null,
+      };
     }
-
-    if (!match) return;
-
-    if (match.status === 'finished') {
-      alert('⚠️ Матч вже завершився — прогнози більше не приймаються');
-      return;
-    }
-
-    if (match.status === 'live') {
-      alert('⚠️ Матч вже почався — прогнози більше не приймаються');
-      return;
-    }
-
-    if (isTimePassed(match.match_date, match.match_time)) {
-      alert('⚠️ Час матчу настав — прийом прогнозів закрито');
-      return;
-    }
-
-    const home = parseInt(homeScore);
-    const away = parseInt(awayScore);
-
-    if (isNaN(home) || isNaN(away)) {
-      alert('Введіть коректний рахунок');
-      return;
-    }
-
-    setIsSaving(true);
-    try {
-      const { error } = await supabase
-        .from('predictions')
-        .upsert({
-          user_id: currentUser.id,
-          match_id: parseInt(matchId, 10),
-          predicted_home_score: home,
-          predicted_away_score: away
-        }, { onConflict: 'user_id,match_id' });
-
-      if (error) throw error;
-
-      await fetchAllPredictions(parseInt(matchId, 10));
-      alert('Прогноз успішно збережено!');
-    } catch (error: any) {
-      console.error('Supabase error:', error);
-
-      if (error?.message?.includes('row-level security') || error?.code === '42501') {
-        alert('⚠️ Прийом прогнозів на цей матч закрито');
-      } else {
-        alert(`⚠️ Помилка: ${error?.message || 'Невідома помилка'}`);
-      }
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  if (loading) return <div className="flex h-full items-center justify-center text-zinc-500 bg-zinc-950">Завантаження...</div>;
-  if (!match) return <div className="p-6 text-center text-red-400 bg-zinc-950">Матч не знайдено</div>;
+    return pred;
+  });
 
   const backHref = match.round >= 4
     ? `/tournaments/${tournamentId}/play-off`
@@ -191,34 +109,15 @@ export default function MatchPredictionPage() {
         </div>
       </div>
 
-      <div className="bg-zinc-900/50 rounded-3xl border border-zinc-800 p-6 mb-8">
-        <h3 className="text-center text-xs font-bold text-zinc-500 uppercase tracking-widest mb-6 flex items-center justify-center gap-2">
-          {isLocked ? <Lock size={14} /> : <Trophy size={14} />}
-          {isMatchLive
-            ? 'Матч вже триває'
-            : isMatchFinished
-            ? 'Матч завершено'
-            : isLocked
-            ? 'Прийом прогнозів закрито'
-            : 'Ваш прогноз'}
-        </h3>
-
-        <div className="flex justify-center items-center gap-6 mb-8">
-          <input disabled={isLocked || !currentUser} type="number" value={homeScore} onChange={(e) => setHomeScore(e.target.value)} className="w-24 h-24 bg-zinc-950 border border-zinc-800 rounded-2xl text-center text-5xl font-black text-white focus:border-green-500 outline-none transition-all" placeholder="0" />
-          <span className="text-2xl text-zinc-700 font-bold">:</span>
-          <input disabled={isLocked || !currentUser} type="number" value={awayScore} onChange={(e) => setAwayScore(e.target.value)} className="w-24 h-24 bg-zinc-950 border border-zinc-800 rounded-2xl text-center text-5xl font-black text-white focus:border-green-500 outline-none transition-all" placeholder="0" />
-        </div>
-
-        {!isLocked && (
-          <button
-            onClick={handleSavePrediction}
-            disabled={(!currentUser) ? false : (homeScore === '' || awayScore === '' || isSaving)}
-            className="w-full bg-green-600 hover:bg-green-500 disabled:opacity-50 text-white font-bold py-4 rounded-2xl transition-all shadow-lg shadow-green-900/20"
-          >
-            {!currentUser ? 'Увійти, щоб зробити прогноз' : isSaving ? 'Збереження...' : 'Підтвердити прогноз'}
-          </button>
-        )}
-      </div>
+      <PredictionForm
+        matchId={numericMatchId}
+        userId={user?.id}
+        matchStatus={match.status}
+        matchDate={match.match_date}
+        matchTime={match.match_time}
+        initialHomeScore={userPrediction?.predicted_home_score?.toString() || ''}
+        initialAwayScore={userPrediction?.predicted_away_score?.toString() || ''}
+      />
 
       <div className="space-y-4">
         <div className="flex items-center gap-2 text-zinc-400">
@@ -226,24 +125,38 @@ export default function MatchPredictionPage() {
           <h3 className="text-xs font-bold uppercase tracking-wider">Прогнози ліги ({allPredictions.length})</h3>
         </div>
         <div className="space-y-2">
-          {allPredictions.length > 0 ? allPredictions.map((pred) => (
-            <div key={pred.id} className="flex justify-between items-center bg-zinc-900 p-4 rounded-2xl border border-zinc-800">
-              <span className="text-zinc-400 text-sm truncate mr-4">{pred.profiles?.email}</span>
-              <div className="flex items-center gap-4 shrink-0">
-                <span className="font-black text-white text-lg tabular-nums">{pred.predicted_home_score} : {pred.predicted_away_score}</span>
+          {allPredictions.length > 0 ? allPredictions.map((pred) => {
+            const profile = Array.isArray(pred.profiles) ? pred.profiles[0] : pred.profiles;
+            const isHidden = pred.predicted_home_score === null || pred.predicted_away_score === null;
 
-                {isMatchFinished && (
-                  <span className={`text-xs font-bold px-2.5 py-1 rounded-lg min-w-[35px] text-center ${
-                    (pred.points_awarded ?? 0) > 0
-                      ? 'text-green-400 bg-green-500/10 border border-green-500/20'
-                      : 'text-zinc-500 bg-zinc-800'
-                  }`}>
-                    {(pred.points_awarded ?? 0) > 0 ? `+${pred.points_awarded}` : '0'}
-                  </span>
-                )}
+            return (
+              <div key={pred.id} className="flex justify-between items-center bg-zinc-900 p-4 rounded-2xl border border-zinc-800">
+                <span className="text-zinc-400 text-sm truncate mr-4">{profile?.email}</span>
+                <div className="flex items-center gap-4 shrink-0">
+                  {isHidden ? (
+                    <div className="flex items-center gap-1.5 text-zinc-500 bg-zinc-800/50 px-3 py-1.5 rounded-xl border border-zinc-800">
+                      <Lock size={14} />
+                      <span className="text-xs font-medium">Приховано</span>
+                    </div>
+                  ) : (
+                    <span className="font-black text-white text-lg tabular-nums">
+                      {pred.predicted_home_score} : {pred.predicted_away_score}
+                    </span>
+                  )}
+
+                  {isMatchFinished && !isHidden && (
+                    <span className={`text-xs font-bold px-2.5 py-1 rounded-lg min-w-[35px] text-center ${
+                      (pred.points_awarded ?? 0) > 0
+                        ? 'text-green-400 bg-green-500/10 border border-green-500/20'
+                        : 'text-zinc-500 bg-zinc-800'
+                    }`}>
+                      {(pred.points_awarded ?? 0) > 0 ? `+${pred.points_awarded}` : '0'}
+                    </span>
+                  )}
+                </div>
               </div>
-            </div>
-          )) : (
+            );
+          }) : (
             <div className="text-center py-8 text-zinc-600 flex flex-col items-center gap-2">
               <AlertCircle size={24} />
               <p className="text-sm">Прогнозів ще немає. Будь першим!</p>
