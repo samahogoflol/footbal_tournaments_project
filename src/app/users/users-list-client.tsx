@@ -40,7 +40,7 @@ export default function UsersListClient({ initialUsers }: UsersListClientProps) 
 
       <input
         type="text"
-        placeholder="Пошук по імені, ніку або пошті..."
+        placeholder="Пошук по ніку або пошті..."
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
         className="w-full bg-zinc-800/50 border border-zinc-700 text-zinc-100 rounded-xl py-3 px-4 mb-6 focus:outline-none focus:border-green-500"
@@ -53,16 +53,11 @@ export default function UsersListClient({ initialUsers }: UsersListClientProps) 
               <div className="flex items-center gap-4">
                 <UserCircle2 size={40} className="text-zinc-600" />
                 <div className="flex flex-col">
-                  <span className="font-semibold text-zinc-200">{user.full_name || 'Без імені'}</span>
                   <span className="text-sm text-blue-400">{user.username || '—'}</span>
                   <span className="text-xs text-zinc-500 flex items-center gap-1 mt-1">
                     <Mail size={11} /> {user.email}
                   </span>
                 </div>
-              </div>
-              <div className="flex items-center gap-2 text-yellow-500 font-bold">
-                <Trophy size={18} />
-                <span>{user.total_points || 0}</span>
               </div>
             </div>
           </Link>

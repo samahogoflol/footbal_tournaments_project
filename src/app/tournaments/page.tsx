@@ -21,6 +21,16 @@ const TOURNAMENTS = [
     description: 'Новий сезон найпрестижнішого клубного турніру Європи. Реєстрація відкриється пізніше.',
     color: 'from-blue-600 to-indigo-900',
     icon: Trophy,
+  },
+  {
+    id: 'apl2026',
+    name: 'АПЛ 2026-2027',
+    status: 'upcoming',
+    participants: 0,
+    date: 'Серпень 2026',
+    description: 'Новий сезон найкращої ліги світу. Реєстрація відкриється 14.08.',
+    color: 'from-blue-600 to-indigo-900',
+    icon: Trophy,
   }
 ];
 
@@ -135,7 +145,6 @@ export default function TournamentsPage() {
           );
         })}
       </div>
-
     </div>
   );
 }
