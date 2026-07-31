@@ -37,7 +37,8 @@ export default function PredictionsHistoryPage() {
                 match_time,
                 home_score,
                 away_score,
-                status
+                status,
+                tournament_id
                 )
             `)
             .eq('user_id', user.id)
@@ -93,7 +94,7 @@ export default function PredictionsHistoryPage() {
             <div className="text-center text-zinc-500 py-4">У вас ще немає прогнозів.</div>
           ) : (
             history.map((item) => (
-              <PredictionCard key={item.id} item={item} />
+              <PredictionCard key={item.id} item={item} tournamentId={item.matches.tournament_id} />
             ))
           )}
         </div>
