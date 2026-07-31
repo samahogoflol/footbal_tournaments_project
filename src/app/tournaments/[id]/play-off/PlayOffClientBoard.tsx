@@ -4,41 +4,37 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, CalendarDays } from 'lucide-react';
 
+interface Round {
+  value: number;
+  label: string;
+}
+
 interface MatchesClientBoardProps {
   initialMatches: any[];
   tournamentId: string;
+  rounds: Round[];
 }
-
-const ROUNDS = [
-  { value: 4, label: '1/16' },
-  { value: 5, label: '1/8' },
-  { value: 6, label: '1/4' },
-  { value: 7, label: '1/2' },
-  { value: 9, label: '3-тє місце' },
-  { value: 8, label: 'Фінал' },
-];
 
 function parseMatchDateTime(dateStr: string, timeStr: string): number {
   if (!dateStr || !timeStr) return 0;
-
   const [day, month] = dateStr.split('.').map(Number);
   const [hours, minutes] = timeStr.split(':').map(Number);
-
   return new Date(2026, (month || 1) - 1, day || 1, hours || 0, minutes || 0).getTime();
 }
 
-export default function PlayOffClientBoard({ initialMatches, tournamentId }: MatchesClientBoardProps) {
+export default function PlayOffClientBoard({ initialMatches, tournamentId, rounds }: MatchesClientBoardProps) {
 
   const sortedMatches = [...initialMatches].sort(
     (a, b) => parseMatchDateTime(a.match_date, a.match_time) - parseMatchDateTime(b.match_date, b.match_time)
   );
 
   const availableRounds = new Set(sortedMatches.map((match) => match.round));
+  const defaultRound = rounds[0]?.value ?? 4;
 
   const [activeRound, setActiveRound] = useState<number>(() => {
-    if (typeof window === 'undefined') return 4;
-    const saved = parseInt(sessionStorage.getItem(`matches-round-${tournamentId}`) || '4');
-    return availableRounds.has(saved) ? saved : 4;
+    if (typeof window === 'undefined') return defaultRound;
+    const saved = parseInt(sessionStorage.getItem(`matches-round-${tournamentId}`) || String(defaultRound));
+    return availableRounds.has(saved) ? saved : defaultRound;
   });
 
   const filteredMatches = sortedMatches.filter((match) => match.round === activeRound);
@@ -75,14 +71,12 @@ export default function PlayOffClientBoard({ initialMatches, tournamentId }: Mat
         </div>
         <div>
           <h2 className="text-2xl font-bold text-zinc-100">Плей-офф</h2>
-          <p className="text-sm text-zinc-400">
-            Обери стадію для перегляду матчів
-          </p>
+          <p className="text-sm text-zinc-400">Обери стадію для перегляду матчів</p>
         </div>
       </div>
 
       <div className="flex p-1 mb-6 bg-zinc-900/80 rounded-xl border border-zinc-800">
-        {ROUNDS.map(({ value, label }) => {
+        {rounds.map(({ value, label }) => {
           const isAvailable = availableRounds.has(value);
           const isActive = activeRound === value;
 
@@ -113,7 +107,6 @@ export default function PlayOffClientBoard({ initialMatches, tournamentId }: Mat
             onClick={handleMatchClick}
             className="flex items-stretch justify-between p-4 bg-zinc-900/50 border border-zinc-800/80 rounded-2xl shadow-sm hover:bg-zinc-800/50 transition-colors group"
           >
-
             <div className="flex flex-col items-center gap-2 w-[35%]">
               <img
                 src={`https://flagcdn.com/w40/${match.home_code}.png`}
@@ -154,7 +147,6 @@ export default function PlayOffClientBoard({ initialMatches, tournamentId }: Mat
                 {match.away_team}
               </span>
             </div>
-
           </Link>
         ))}
       </div>

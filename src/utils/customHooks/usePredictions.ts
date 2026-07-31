@@ -15,11 +15,11 @@ interface UsePredictionProps {
 const parseMatchTime = (date: string, time: string): number => {
   const [day, month] = date.split('.').map(Number);
   const [hours, minutes] = time.split(':').map(Number);
-
   const matchDateStr = `2026-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}T${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00+03:00`;
-
   return new Date(matchDateStr).getTime();
 };
+
+const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
 export function usePrediction({
   matchId,
@@ -46,10 +46,16 @@ export function usePrediction({
     [matchDate, matchTime]
   );
 
+  const isTooFarAway = useMemo(() => {
+    const now = new Date().getTime();
+    return matchTimestamp - now > SEVEN_DAYS_MS;
+  }, [matchTimestamp]);
+
   const isLocked = useMemo(() => {
     if (matchStatus === 'live' || matchStatus === 'finished') return true;
+    if (isTooFarAway) return true;
     return new Date().getTime() >= matchTimestamp;
-  }, [matchStatus, matchTimestamp]);
+  }, [matchStatus, matchTimestamp, isTooFarAway]);
 
   const handleSavePrediction = async () => {
     if (!userId) {
@@ -64,6 +70,11 @@ export function usePrediction({
 
     if (matchStatus === 'live') {
       alert('⚠️ Матч вже почався — прогнози більше не приймаються');
+      return;
+    }
+
+    if (isTooFarAway) {
+      alert('⚠️ Прогнози на цей матч ще не відкриті. Повертайся за 7 днів до матчу');
       return;
     }
 
@@ -95,7 +106,6 @@ export function usePrediction({
       if (error) throw error;
 
       alert('Прогноз успішно збережено!');
-
       if (onSuccess) onSuccess();
 
     } catch (error: any) {
@@ -118,6 +128,7 @@ export function usePrediction({
     setAwayScore,
     isSaving,
     isLocked,
+    isTooFarAway,
     handleSavePrediction
   };
 }

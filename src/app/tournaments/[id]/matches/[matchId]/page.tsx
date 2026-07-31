@@ -2,13 +2,13 @@ import Link from 'next/link';
 import { ArrowLeft, Clock, Users, Lock, AlertCircle } from 'lucide-react';
 import { createClient } from '@/src/utils/supabase';
 import PredictionForm from '@/src/components/PredictionForm';
+import { TOURNAMENTS_CONFIG } from '@/src/config/tournametns'; 
 
 export default async function MatchPredictionPage({
   params,
 }: {
   params: Promise<{ id: string; matchId: string }>;
 }) {
-
   const resolvedParams = await params;
   const tournamentId = resolvedParams.id;
   const matchIdString = resolvedParams.matchId;
@@ -18,15 +18,30 @@ export default async function MatchPredictionPage({
 
   const { data: { user } } = await supabase.auth.getUser();
 
-  const { data: match } = await supabase
-    .from('matches')
-    .select('*')
-    .eq('id', numericMatchId)
-    .single();
+  const [{ data: match }, { data: teams }] = await Promise.all([
+    supabase
+      .from('matches')
+      .select('*')
+      .eq('id', numericMatchId)
+      .single(),
+    supabase
+      .from('teams')
+      .select('name, logo_url')
+      .eq('tournament_id', tournamentId)
+  ]);
 
   if (!match) {
     return <div className="p-6 text-center text-red-400 bg-zinc-950 h-full flex items-center justify-center">Матч не знайдено</div>;
   }
+
+  // логотипи з БД якщо є, інакше прапори
+  const logoMap: Record<string, string> = {};
+  (teams || []).forEach(t => { logoMap[t.name] = t.logo_url });
+
+  const getLogo = (teamName: string, code: string) => {
+    if (logoMap[teamName]) return logoMap[teamName];
+    return `https://flagcdn.com/w160/${code}.png`;
+  };
 
   const { data: rawPredictions } = await supabase
     .from('predictions')
@@ -47,31 +62,36 @@ export default async function MatchPredictionPage({
 
   const isMatchLive = match.status === 'live';
   const isMatchFinished = match.status === 'finished';
-  
+
   const isTimePassed = (date: string, time: string) => {
-    const matchTime = new Date(`${date}T${time}:00`);
-    const now = new Date();
-    return now >= matchTime;
+    const nowInKievStr = new Date().toLocaleString('en-US', { timeZone: 'Europe/Kiev' });
+    const nowInKiev = new Date(nowInKievStr).getTime();
+    const matchTimeObj = new Date(`${date}T${time}:00`).getTime();
+    return nowInKiev >= matchTimeObj;
   };
+
   const isMatchStartedByTime = isTimePassed(match.match_date, match.match_time);
   const isLocked = isMatchLive || isMatchFinished || isMatchStartedByTime;
 
   const allPredictions = (rawPredictions || []).map((pred) => {
     const isMyPrediction = user && pred.user_id === user.id;
-    
     if (!isLocked && !isMyPrediction) {
-      return {
-        ...pred,
-        predicted_home_score: null,
-        predicted_away_score: null,
-      };
+      return { ...pred, predicted_home_score: null, predicted_away_score: null };
     }
     return pred;
   });
 
-  const backHref = match.round >= 4
-    ? `/tournaments/${tournamentId}/play-off`
-    : `/tournaments/${tournamentId}/group-stage`;
+  const config = TOURNAMENTS_CONFIG[tournamentId];
+
+  let backHref = '';
+  if (config?.hasGroupStage && config?.hasPlayOff) {
+    const minPlayOff = config?.playOffRounds?.[0]?.value ?? 4;
+    backHref = match.round >= minPlayOff
+      ? `/tournaments/${tournamentId}/play-off`
+      : `/tournaments/${tournamentId}/group-stage`;
+  } else {
+    backHref = `/tournaments/${tournamentId}/matches`;
+  }
 
   return (
     <div className="flex flex-col h-full bg-zinc-950 px-4 pt-6 pb-12">
@@ -88,7 +108,11 @@ export default async function MatchPredictionPage({
 
         <div className="flex justify-between items-center gap-4">
           <div className="flex flex-col items-center gap-3 w-1/3">
-            <img src={`https://flagcdn.com/w160/${match.home_code}.png`} className="w-20 h-12 object-cover rounded-lg shadow-lg" alt={match.home_team} />
+            <img
+              src={getLogo(match.home_team, match.home_code)}
+              className="w-16 h-16 object-contain"
+              alt={match.home_team}
+            />
             <span className="text-zinc-100 font-bold text-sm uppercase text-center">{match.home_team}</span>
           </div>
 
@@ -103,7 +127,11 @@ export default async function MatchPredictionPage({
           </div>
 
           <div className="flex flex-col items-center gap-3 w-1/3">
-            <img src={`https://flagcdn.com/w160/${match.away_code}.png`} className="w-20 h-12 object-cover rounded-lg shadow-lg" alt={match.away_team} />
+            <img
+              src={getLogo(match.away_team, match.away_code)}
+              className="w-16 h-16 object-contain"
+              alt={match.away_team}
+            />
             <span className="text-zinc-100 font-bold text-sm uppercase text-center">{match.away_team}</span>
           </div>
         </div>
@@ -143,7 +171,6 @@ export default async function MatchPredictionPage({
                       {pred.predicted_home_score} : {pred.predicted_away_score}
                     </span>
                   )}
-
                   {isMatchFinished && !isHidden && (
                     <span className={`text-xs font-bold px-2.5 py-1 rounded-lg min-w-[35px] text-center ${
                       (pred.points_awarded ?? 0) > 0

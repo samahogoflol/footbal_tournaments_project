@@ -1,3 +1,5 @@
+import { getTeamLogo } from "../config/getTeamLogo";
+
 interface PredictionCardProps {
   item: {
     predicted_home_score: number;
@@ -26,11 +28,11 @@ export const PredictionCard = ({item} : PredictionCardProps) => {
                 </div>
                 <div className="flex items-center gap-2 flex-1 justify-end">
                     <span className="text-sm font-bold text-zinc-300">{item.matches.home_team}</span>
-                    <img src={`https://flagcdn.com/w40/${item.matches.home_code}.png`} className="w-6 h-4 rounded-sm object-cover" alt="flag" />
+                    <img src={getTeamLogo(tournamentId, match.home_code)} className="w-6 h-4 rounded-sm object-cover" alt="flag" />
                 </div>
                 <div className="text-zinc-600 font-bold text-xs">VS</div>
                 <div className="flex items-center gap-2 flex-1 justify-start">
-                    <img src={`https://flagcdn.com/w40/${item.matches.away_code}.png`} className="w-6 h-4 rounded-sm object-cover" alt="flag" />
+                    <img src={getTeamLogo(tournamentId, match.home_code)} className="w-6 h-4 rounded-sm object-cover" alt="flag" />
                     <span className="text-sm font-bold text-zinc-300">{item.matches.away_team}</span>
                 </div>
             </div>

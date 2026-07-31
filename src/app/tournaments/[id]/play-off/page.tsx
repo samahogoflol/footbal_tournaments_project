@@ -1,13 +1,17 @@
 import { supabase } from '@/src/lib/supabase';
 import PlayOffClientBoard from './PlayOffClientBoard';
+import { TOURNAMENTS_CONFIG } from '@/src/config/tournametns';
 
 export default async function PlayOffPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: tournamentId } = await params;
+  const config = TOURNAMENTS_CONFIG[tournamentId];
+  const minPlayOffRound = config?.playOffRounds?.[0]?.value ?? 4;
 
   const { data: matches, error } = await supabase
     .from('matches')
     .select('*')
-    .gte('round', 4)
+    .eq('tournament_id', tournamentId)
+    .gte('round', minPlayOffRound) 
     .order('match_date', { ascending: true })
     .order('match_time', { ascending: true });
 
@@ -19,6 +23,7 @@ export default async function PlayOffPage({ params }: { params: Promise<{ id: st
     <PlayOffClientBoard
       initialMatches={matches || []}
       tournamentId={tournamentId}
+      rounds={config?.playOffRounds || []}
     />
   );
 }

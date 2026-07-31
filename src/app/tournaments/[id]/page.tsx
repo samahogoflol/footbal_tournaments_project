@@ -1,36 +1,60 @@
 "use client"
 
-import {use} from "react"
+import { use } from "react"
 import Link from 'next/link';
-import { ArrowLeft, CalendarDays, Trophy, Table, ChevronRight, Lock } from 'lucide-react';
+import { ArrowLeft, CalendarDays, Trophy, Table, List, ChevronRight, Lock } from 'lucide-react';
+import { TOURNAMENTS_CONFIG } from "@/src/config/tournametns";
+import { notFound } from 'next/navigation'
 
 export default function TournamentHubPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
-  const tournamentId = resolvedParams.id; 
+  const tournamentId = resolvedParams.id;
+  const config = TOURNAMENTS_CONFIG[tournamentId]
+  if (!config) notFound()
+
+  const scheduleItems = [];
+
+  if (config.hasGroupStage) {
+    scheduleItems.push({
+      title: "Групова стадія",
+      description: "Усі матчі групового етапу",
+      href: `/tournaments/${tournamentId}/group-stage`,
+      icon: CalendarDays,
+      color: "text-green-400",
+      bgColor: "bg-green-500/10 border-green-500/20",
+      status: "active"
+    });
+  }
+
+  if (config.hasPlayOff) {
+    scheduleItems.push({
+      title: "Плей-оф",
+      description: "Матчі на виліт",
+      href: `/tournaments/${tournamentId}/play-off`,
+      icon: Trophy,
+      color: "text-green-400",
+      bgColor: "bg-green-500/10 border-green-500/20",
+      status: "active"
+    });
+  }
+
+  // АПЛ — просто список усіх матчів по турах
+  if (!config.hasGroupStage && !config.hasPlayOff) {
+    scheduleItems.push({
+      title: "Матчі",
+      description: "Усі матчі турніру по турах",
+      href: `/tournaments/${tournamentId}/matches`,
+      icon: List,
+      color: "text-green-400",
+      bgColor: "bg-green-500/10 border-green-500/20",
+      status: "active"
+    });
+  }
 
   const hubSections = [
     {
       title: "Розклад та матчі",
-      items: [
-        {
-          title: "Групова стадія",
-          description: "Усі матчі 1, 2 та 3 раундів",
-          href: `/tournaments/${tournamentId}/group-stage`,
-          icon: CalendarDays,
-          color: "text-green-400",
-          bgColor: "bg-green-500/10 border-green-500/20",
-          status: "active"
-        },
-        {
-          title: "Плей-оф",
-          description: "Матчі на виліт (починаючи з 1/16 фіналу)",
-          href: `/tournaments/${tournamentId}/play-off`,
-          icon: Trophy,
-          color: "text-green-400",
-          bgColor: "bg-green-500/10 border-green-500/20",
-          status: "active"
-        }
-      ]
+      items: scheduleItems,
     },
     {
       title: "Статистика турніру",
@@ -38,7 +62,7 @@ export default function TournamentHubPage({ params }: { params: Promise<{ id: st
         {
           title: "Турнірна таблиця прогнозистів",
           description: "Позиція в таблиці учасників турніру",
-          href: `/leaderboards`,
+          href: `/tournaments/${tournamentId}/leaderboard`,
           icon: Table,
           color: "text-blue-400",
           bgColor: "bg-blue-500/10 border-blue-500/20",
@@ -46,14 +70,13 @@ export default function TournamentHubPage({ params }: { params: Promise<{ id: st
         }
       ]
     },
-
   ];
 
   return (
     <div className="flex flex-col h-full animate-fade-in bg-zinc-950 px-3 pt-4 pb-4">
-      
-      <Link 
-        href="/tournaments" 
+
+      <Link
+        href="/tournaments"
         className="inline-flex items-center gap-2 text-zinc-400 hover:text-green-400 transition-colors w-fit mb-6"
       >
         <ArrowLeft size={20} />
@@ -62,16 +85,17 @@ export default function TournamentHubPage({ params }: { params: Promise<{ id: st
 
       <div className="mb-8">
         <h2 className="text-3xl font-black text-zinc-100 tracking-tight mb-2">
-          Чемпіонат Світу 2026
+          {config.name}
         </h2>
       </div>
+
       <div className="flex flex-col gap-8">
         {hubSections.map((section, sectionIdx) => (
           <div key={sectionIdx}>
             <h3 className="text-xs font-bold text-zinc-500 uppercase tracking-widest mb-3 px-1">
               {section.title}
             </h3>
-            
+
             <div className="flex flex-col gap-3">
               {section.items.map((item, itemIdx) => {
                 const Icon = item.icon;
@@ -79,11 +103,11 @@ export default function TournamentHubPage({ params }: { params: Promise<{ id: st
 
                 const Card = (
                   <div className={`flex items-center p-4 rounded-2xl border transition-all duration-300 ${
-                    isActive 
-                      ? "bg-zinc-900 border-zinc-800 hover:bg-zinc-800/80 hover:border-zinc-700 shadow-lg shadow-black/20 group" 
+                    isActive
+                      ? "bg-zinc-900 border-zinc-800 hover:bg-zinc-800/80 hover:border-zinc-700 shadow-lg shadow-black/20 group"
                       : "bg-zinc-900/50 border-zinc-800/50 opacity-70"
                   }`}>
-                    
+
                     <div className={`p-3 rounded-xl border shrink-0 ${item.bgColor} ${isActive ? 'group-hover:scale-110 transition-transform' : ''}`}>
                       <Icon size={24} className={item.color} />
                     </div>
@@ -93,9 +117,7 @@ export default function TournamentHubPage({ params }: { params: Promise<{ id: st
                         <span className={`font-bold text-base md:text-lg truncate ${isActive ? "text-zinc-100" : "text-zinc-400"}`}>
                           {item.title}
                         </span>
-                        {!isActive && (
-                          <Lock size={14} className="text-zinc-500" />
-                        )}
+                        {!isActive && <Lock size={14} className="text-zinc-500" />}
                       </div>
                       <span className="text-xs md:text-sm text-zinc-500 truncate mt-0.5">
                         {item.description}
@@ -110,18 +132,12 @@ export default function TournamentHubPage({ params }: { params: Promise<{ id: st
                   </div>
                 );
 
-                if (isActive) {
-                  return (
-                    <Link key={itemIdx} href={item.href} className="block outline-none focus:ring-2 focus:ring-green-500/50 rounded-2xl">
-                      {Card}
-                    </Link>
-                  );
-                }
-
-                return (
-                  <div key={itemIdx}>
+                return isActive ? (
+                  <Link key={itemIdx} href={item.href} className="block outline-none focus:ring-2 focus:ring-green-500/50 rounded-2xl">
                     {Card}
-                  </div>
+                  </Link>
+                ) : (
+                  <div key={itemIdx}>{Card}</div>
                 );
               })}
             </div>
