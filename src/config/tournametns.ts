@@ -8,6 +8,8 @@ export type TournamentConfig = {
   playOffRounds?: Round[]
   groupStageRounds?: Round[]
   leagueRounds?: Round[]
+  hasBonus?: boolean
+  scheduleReady?: boolean
 }
 
 export const TOURNAMENTS_CONFIG: Record<string, TournamentConfig> = {
@@ -35,16 +37,19 @@ export const TOURNAMENTS_CONFIG: Record<string, TournamentConfig> = {
   name: 'АПЛ 2026-2027',
   hasGroupStage: false,
   hasPlayOff: false,
+  hasBonus: true,
   leagueRounds: Array.from({ length: 38 }, (_, i) => ({
     value: i + 1,
     label: `${i + 1}`,
   })),
 },
-  ucl2026: {
-    id: 'ucl2026',
+  cl2627: {
+    id: 'cl2627',
     name: 'Ліга Чемпіонів 26/27',
     hasGroupStage: true,
     hasPlayOff: true,
+    hasBonus: true,
+    scheduleReady: false,
     groupStageRounds: [
     { value: 1, label: '1 Тур' },
     { value: 2, label: '2 Тур' },

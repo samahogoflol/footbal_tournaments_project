@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { ShieldCheck, Target, CheckCircle2, Clock, MessageSquareText, Info, Trophy, Crosshair, HelpCircle, Star, LayoutList } from 'lucide-react';
 
-type TournamentTab = 'wc2026' | 'ucl2026' | 'apl2026';
+type TournamentTab = 'wc2026' | 'cl2627' | 'apl2026';
 
 export default function RulesPage() {
   const [activeTab, setActiveTab] = useState<TournamentTab>('wc2026');
@@ -22,7 +22,7 @@ export default function RulesPage() {
       </div>
 
       <div className="flex bg-zinc-800/60 p-1 rounded-xl mb-6 border border-zinc-700/50">
-        {(['wc2026', 'ucl2026', 'apl2026'] as TournamentTab[]).map((tab) => (
+        {(['wc2026', 'cl2627', 'apl2026'] as TournamentTab[]).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -32,7 +32,7 @@ export default function RulesPage() {
                 : 'text-zinc-500 hover:text-zinc-300'
             }`}
           >
-            {tab === 'wc2026' ? 'ЧС 26' : tab === 'ucl2026' ? 'ЛЧ 26-27' : 'АПЛ 26-27'}
+            {tab === 'wc2026' ? 'ЧС 26' : tab === 'cl2627' ? 'ЛЧ 26-27' : 'АПЛ 26-27'}
           </button>
         ))}
       </div>
@@ -94,7 +94,7 @@ export default function RulesPage() {
           </div>
         )}
 
-        {activeTab === 'ucl2026' && (
+        {activeTab === 'cl2627' && (
           <div className="flex flex-col gap-4 animate-fade-in">
 
             <div className="text-xs font-bold text-zinc-500 uppercase tracking-widest px-1">Базова система балів</div>
@@ -146,7 +146,7 @@ export default function RulesPage() {
               </div>
             </div>
 
-            <div className="text-xs font-bold text-zinc-500 uppercase tracking-widest px-1 mt-2">Бонусні бали (Прийом прогнозів на бонусні бали приймається до 21.08.26 до 21:30 по Києвському часу )</div>
+            <div className="text-xs font-bold text-zinc-500 uppercase tracking-widest px-1 mt-2">Бонусні бали (Прийом прогнозів на бонусні бали приймається до 09.09.26 до 17:30 по Києвському часу )</div>
 
             <div className="flex items-start gap-4 bg-zinc-800/40 border border-purple-900/30 p-5 rounded-2xl shadow-sm">
               <div className="p-2.5 bg-purple-500/10 rounded-lg border border-purple-500/20 shrink-0">
@@ -265,7 +265,7 @@ export default function RulesPage() {
               </div>
             </div>
             <div className="text-xs font-bold text-zinc-500 uppercase tracking-widest px-1 mt-2">
-              Бонусні бали (Прийом прогнозів на бонусні бали приймається до 09.09.26 до 17:30 по Києвському часу )
+              Бонусні бали (Прийом прогнозів на бонусні бали приймається до 21.08.26 до 21:30 по Києвському часу )
             </div>
 
             <div className="flex items-start gap-4 bg-zinc-800/40 border border-purple-900/30 p-5 rounded-2xl shadow-sm">

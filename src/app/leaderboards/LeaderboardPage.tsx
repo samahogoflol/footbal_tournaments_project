@@ -4,12 +4,12 @@ import { useState, useEffect, useMemo } from 'react';
 import { Search, Trophy, Medal, CalendarClock } from 'lucide-react';
 import { createBrowserSupabaseClient } from '@/src/utils/supabase-browser';
 
-type TournamentTab = 'wc2026' | 'ucl2026' | 'apl2026';
+type TournamentTab = 'wc2026' | 'cl2627' | 'apl2026';
 
 const TABS: { id: TournamentTab; label: string }[] = [
   { id: 'wc2026', label: 'ЧС 26' },
   { id: 'apl2026', label: 'АПЛ 26-27' },
-  { id: 'ucl2026', label: 'ЛЧ 26-27' },
+  { id: 'cl2627', label: 'ЛЧ 26-27' },
 ];
 
 export default function LeaderboardPage() {
