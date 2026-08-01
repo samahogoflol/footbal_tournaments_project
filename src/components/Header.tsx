@@ -1,21 +1,18 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation'; 
+import { usePathname } from 'next/navigation';
 import { Menu, X, Trophy, ShieldCheck, LogIn, LogOut, User as UserIcon, CalendarDays } from 'lucide-react';
-import { createBrowserClient } from '@supabase/ssr';
+import { createBrowserSupabaseClient } from '@/src/utils/supabase-browser';
 import { logout } from '../app/actions/auth';
 
 export default function Header() {
   const [isOpen, setIsOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
-  const pathname = usePathname(); 
+  const pathname = usePathname();
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  const supabase = useMemo(() => createBrowserSupabaseClient(), []);
 
   const toggleMenu = () => setIsOpen(!isOpen);
 

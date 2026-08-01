@@ -1,9 +1,10 @@
-import { supabase } from '@/src/lib/supabase';
+import { createClient } from '@/src/utils/supabase';
 import { TOURNAMENTS_CONFIG } from '@/src/config/tournametns';
 import LeagueMatchesClientBoard from './LeagueMatchesClientBoard';
 
 export default async function LeagueMatchesPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: tournamentId } = await params;
+  const supabase = await createClient();
   const config = TOURNAMENTS_CONFIG[tournamentId];
 
   const [{ data: matches }, { data: teams }] = await Promise.all([

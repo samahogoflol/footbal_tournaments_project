@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { Search, Trophy, Medal, CalendarClock } from 'lucide-react';
-import { supabase } from '@/src/lib/supabase';
+import { createBrowserSupabaseClient } from '@/src/utils/supabase-browser';
 
 type TournamentTab = 'wc2026' | 'ucl2026' | 'apl2026';
 
@@ -13,6 +13,7 @@ const TABS: { id: TournamentTab; label: string }[] = [
 ];
 
 export default function LeaderboardPage() {
+  const supabase = useMemo(() => createBrowserSupabaseClient(), []);
   const [activeTab, setActiveTab] = useState<TournamentTab>('wc2026');
   const [users, setUsers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -54,7 +55,7 @@ export default function LeaderboardPage() {
     }
 
     fetchLeaderboard();
-  }, [activeTab]);
+  }, [activeTab, supabase]);
 
   const sortedUsers = useMemo(
     () => [...users].sort((a, b) => b.points - a.points),

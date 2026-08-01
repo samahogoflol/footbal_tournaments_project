@@ -1,9 +1,10 @@
-import { supabase } from '@/src/lib/supabase';
+import { createClient } from '@/src/utils/supabase';
 import PlayOffClientBoard from './PlayOffClientBoard';
 import { TOURNAMENTS_CONFIG } from '@/src/config/tournametns';
 
 export default async function PlayOffPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: tournamentId } = await params;
+  const supabase = await createClient();
   const config = TOURNAMENTS_CONFIG[tournamentId];
   const minPlayOffRound = config?.playOffRounds?.[0]?.value ?? 4;
 

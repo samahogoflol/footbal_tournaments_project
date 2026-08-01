@@ -2,15 +2,12 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { Camera, Save, Lock, Trophy, History, Star, Check } from 'lucide-react';
-import { createBrowserClient } from '@supabase/ssr';
+import { createBrowserSupabaseClient } from '@/src/utils/supabase-browser';
 import { PredictionCard } from '@/src/components/PredictionCard';
 import Link from 'next/link';
 
 export default function ProfilePage() {
-  const supabase = useMemo(() => createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  ), []);
+  const supabase = useMemo(() => createBrowserSupabaseClient(), []);
 
   const [nickname, setNickname] = useState('');
   const [email, setEmail] = useState('');
