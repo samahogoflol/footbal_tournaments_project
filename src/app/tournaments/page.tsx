@@ -1,40 +1,49 @@
 import Link from 'next/link';
 import { Trophy, Users, Calendar, ChevronRight, Globe } from 'lucide-react';
+import { createClient } from '@/src/utils/supabase';
+import { pluralizeUk } from '@/src/utils/pluralize';
 
 const TOURNAMENTS = [
-  {
-    id: 'wc2026',
-    name: 'Чемпіонат Світу 2026',
-    status: 'completed', 
-    participants: 34,
-    date: '11 Червня - 19 Липня 2026',
-    description: 'Головна футбольна подія чотириріччя. Змагайся з іншими учасниками за реальні призи, та звання найкращого прогнозиста турніру!',
-    color: 'from-green-600 to-emerald-900',
-    icon: Globe,
-  },
   {
     id: 'apl2026',
     name: 'АПЛ 2026-2027',
     status: 'active',
-    participants: 0,
     date: 'Серпень 2026',
     description: 'Новий сезон найкращої ліги світу. Реєстрація відкриється 14.08.',
     color: 'from-blue-600 to-indigo-900',
     icon: Trophy,
   },
   {
-    id: 'ucl2026',
+    id: 'cl2627',
     name: 'Ліга Чемпіонів 26/27',
-    status: 'upcoming',
-    participants: 0,
+    status: 'schedule',
     date: 'Вересень 2026',
-    description: 'Новий сезон найпрестижнішого клубного турніру Європи. Реєстрація відкриється пізніше.',
+    description: 'Очікуємо всі команди учасники, та відкриваємо реєстрацію',
     color: 'from-blue-600 to-indigo-900',
     icon: Trophy,
   },
+  {
+    id: 'wc2026',
+    name: 'Чемпіонат Світу 2026',
+    status: 'completed',
+    date: '11 Червня - 19 Липня 2026',
+    description: 'Головна футбольна подія чотириріччя. Змагайся з іншими учасниками за реальні призи, та звання найкращого прогнозиста турніру!',
+    color: 'from-green-600 to-emerald-900',
+    icon: Globe,
+  },
 ];
 
-export default function TournamentsPage() {
+export default async function TournamentsPage() {
+  const supabase = await createClient();
+  const { data: counts } = await supabase
+    .from('tournament_participant_counts')
+    .select('tournament_id, participants');
+
+  const participantsByTournament: Record<string, number> = {};
+  (counts || []).forEach((row) => {
+    participantsByTournament[row.tournament_id] = row.participants;
+  });
+
   return (
     <div className="flex flex-col h-full animate-fade-in bg-gray-900 px-3 pt-4 pb-4">
 
@@ -108,7 +117,12 @@ export default function TournamentsPage() {
                   <div className="flex items-center gap-2 text-zinc-300 bg-zinc-900/50 p-2.5 rounded-lg border border-zinc-800/50">
                     <Users size={16} className={isActive ? "text-blue-400" : isCompleted ? "text-amber-400" : "text-zinc-500"} />
                     <span className="text-xs font-medium truncate">
-                      {isClickable ? `${tournament.participants} учасників` : 'Очікується'}
+                      {isClickable
+                        ? (() => {
+                            const count = participantsByTournament[tournament.id] ?? 0;
+                            return `${count} ${pluralizeUk(count, 'учасник', 'учасники', 'учасників')}`;
+                          })()
+                        : 'Очікується'}
                     </span>
                   </div>
                 </div>

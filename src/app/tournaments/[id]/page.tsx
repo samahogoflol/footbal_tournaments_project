@@ -2,7 +2,7 @@
 
 import { use } from "react"
 import Link from 'next/link';
-import { ArrowLeft, CalendarDays, Trophy, Table, List, ChevronRight, Lock } from 'lucide-react';
+import { ArrowLeft, CalendarDays, Trophy, Table, List, ChevronRight, Lock, Sparkles } from 'lucide-react';
 import { TOURNAMENTS_CONFIG } from "@/src/config/tournametns";
 import { notFound } from 'next/navigation'
 
@@ -12,41 +12,57 @@ export default function TournamentHubPage({ params }: { params: Promise<{ id: st
   const config = TOURNAMENTS_CONFIG[tournamentId]
   if (!config) notFound()
 
+  const scheduleReady = config.scheduleReady ?? true;
   const scheduleItems = [];
 
-  if (config.hasGroupStage) {
-    scheduleItems.push({
-      title: "Групова стадія",
-      description: "Усі матчі групового етапу",
-      href: `/tournaments/${tournamentId}/group-stage`,
-      icon: CalendarDays,
-      color: "text-green-400",
-      bgColor: "bg-green-500/10 border-green-500/20",
-      status: "active"
-    });
+  if (scheduleReady) {
+    if (config.hasGroupStage) {
+      scheduleItems.push({
+        title: "Групова стадія",
+        description: "Усі матчі групового етапу",
+        href: `/tournaments/${tournamentId}/group-stage`,
+        icon: CalendarDays,
+        color: "text-green-400",
+        bgColor: "bg-green-500/10 border-green-500/20",
+        status: "active"
+      });
+    }
+
+    if (config.hasPlayOff) {
+      scheduleItems.push({
+        title: "Плей-оф",
+        description: "Матчі на виліт",
+        href: `/tournaments/${tournamentId}/play-off`,
+        icon: Trophy,
+        color: "text-green-400",
+        bgColor: "bg-green-500/10 border-green-500/20",
+        status: "active"
+      });
+    }
+
+    // АПЛ — просто список усіх матчів по турах
+    if (!config.hasGroupStage && !config.hasPlayOff) {
+      scheduleItems.push({
+        title: "Матчі",
+        description: "Усі матчі турніру по турах",
+        href: `/tournaments/${tournamentId}/matches`,
+        icon: List,
+        color: "text-green-400",
+        bgColor: "bg-green-500/10 border-green-500/20",
+        status: "active"
+      });
+    }
   }
 
-  if (config.hasPlayOff) {
-    scheduleItems.push({
-      title: "Плей-оф",
-      description: "Матчі на виліт",
-      href: `/tournaments/${tournamentId}/play-off`,
-      icon: Trophy,
-      color: "text-green-400",
-      bgColor: "bg-green-500/10 border-green-500/20",
-      status: "active"
-    });
-  }
-
-  // АПЛ — просто список усіх матчів по турах
-  if (!config.hasGroupStage && !config.hasPlayOff) {
-    scheduleItems.push({
-      title: "Матчі",
-      description: "Усі матчі турніру по турах",
-      href: `/tournaments/${tournamentId}/matches`,
-      icon: List,
-      color: "text-green-400",
-      bgColor: "bg-green-500/10 border-green-500/20",
+  const bonusItems = [];
+  if (config.hasBonus) {
+    bonusItems.push({
+      title: "Бонусні прогнози",
+      description: "Переможець, бомбардир та інші бонусні питання",
+      href: `/tournaments/${tournamentId}/bonus`,
+      icon: Sparkles,
+      color: "text-purple-400",
+      bgColor: "bg-purple-500/10 border-purple-500/20",
       status: "active"
     });
   }
@@ -55,6 +71,10 @@ export default function TournamentHubPage({ params }: { params: Promise<{ id: st
     {
       title: "Розклад та матчі",
       items: scheduleItems,
+    },
+    {
+      title: "Бонусні прогнози",
+      items: bonusItems,
     },
     {
       title: "Статистика турніру",
@@ -70,7 +90,7 @@ export default function TournamentHubPage({ params }: { params: Promise<{ id: st
         }
       ]
     },
-  ];
+  ].filter((section) => section.items.length > 0);
 
   return (
     <div className="flex flex-col h-full animate-fade-in bg-zinc-950 px-3 pt-4 pb-4">

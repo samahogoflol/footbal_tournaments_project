@@ -1,6 +1,6 @@
 const LOGO_TOURNAMENTS: Record<string, string> = {
   apl2026: 'apl',
-  ucl2026: 'ucl',
+  cl2627: 'cl',
 }
 
 export function getTeamLogo(tournamentId: string, code: string): string {

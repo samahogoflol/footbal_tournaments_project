@@ -22,9 +22,11 @@ export default function ProfilePage() {
   const [tournamentStats, setTournamentStats] = useState<Record<string, any>>({});
 
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [passwordStatus, setPasswordStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [passwordError, setPasswordError] = useState('');
 
   useEffect(() => {
     const fetchUserAndData = async () => {
@@ -131,14 +133,29 @@ export default function ProfilePage() {
     e.preventDefault();
     setIsChangingPassword(true);
     setPasswordStatus('idle');
+    setPasswordError('');
+
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password: oldPassword,
+    });
+
+    if (signInError) {
+      setPasswordError('Старий пароль введено невірно.');
+      setPasswordStatus('error');
+      setIsChangingPassword(false);
+      return;
+    }
 
     const { error } = await supabase.auth.updateUser({ password: newPassword });
 
     if (error) {
       console.error("Помилка оновлення пароля:", error.message);
+      setPasswordError('Не вдалося оновити пароль. Спробуй ще раз.');
       setPasswordStatus('error');
     } else {
       setPasswordStatus('success');
+      setOldPassword('');
       setNewPassword('');
       setTimeout(() => {
         setShowPasswordModal(false);
@@ -317,6 +334,15 @@ export default function ProfilePage() {
             <form onSubmit={handleChangePassword} className="space-y-4">
               <input
                 type="password"
+                placeholder="Старий пароль"
+                value={oldPassword}
+                onChange={(e) => setOldPassword(e.target.value)}
+                className="w-full p-4 bg-zinc-800 rounded-xl text-white border border-zinc-700 focus:border-green-500 outline-none transition-colors"
+                required
+                disabled={isChangingPassword}
+              />
+              <input
+                type="password"
                 placeholder="Новий пароль"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
@@ -333,21 +359,21 @@ export default function ProfilePage() {
               )}
               {passwordStatus === 'error' && (
                 <div className="p-3 rounded-lg text-sm text-center bg-red-500/10 text-red-400 border border-red-500/20">
-                  Помилка. Спробуй ще раз.
+                  {passwordError || 'Помилка. Спробуй ще раз.'}
                 </div>
               )}
 
               <div className="flex gap-3">
                 <button
                   type="button"
-                  onClick={() => { setShowPasswordModal(false); setNewPassword(''); setPasswordStatus('idle'); }}
+                  onClick={() => { setShowPasswordModal(false); setOldPassword(''); setNewPassword(''); setPasswordStatus('idle'); setPasswordError(''); }}
                   className="flex-1 py-3 rounded-xl bg-zinc-800 text-zinc-400 hover:bg-zinc-700 font-medium transition-colors"
                 >
                   Скасувати
                 </button>
                 <button
                   type="submit"
-                  disabled={isChangingPassword || newPassword.length < 6}
+                  disabled={isChangingPassword || oldPassword.length === 0 || newPassword.length < 6}
                   className="flex-1 py-3 rounded-xl bg-green-500 text-zinc-950 font-bold hover:bg-green-400 disabled:opacity-50 transition-colors"
                 >
                   {isChangingPassword ? 'Збереження...' : 'Зберегти'}
