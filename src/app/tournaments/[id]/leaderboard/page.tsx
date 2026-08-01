@@ -10,7 +10,7 @@ export default async function LeaderboardPage({ params }: { params: Promise<{ id
 
   const { data } = await supabase
     .from('tournament_points')
-    .select(`points, profiles ( id, email )`)
+    .select(`points, profiles ( id, username )`)
     .eq('tournament_id', tournamentId)
     .order('points', { ascending: false });
 
@@ -18,7 +18,7 @@ export default async function LeaderboardPage({ params }: { params: Promise<{ id
   const profile = Array.isArray(item.profiles) ? item.profiles[0] : item.profiles;
   return {
     id: profile?.id || `user-${index}`,
-    email: profile?.email || 'Невідомий учасник',
+    username: profile?.username || 'Анонімний гравець',
     points: item.points || 0,
   };
 });

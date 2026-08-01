@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation'; 
-import { Menu, X, Trophy, Users, ShieldCheck, LogIn, LogOut, User as UserIcon, CalendarDays } from 'lucide-react';
+import { Menu, X, Trophy, ShieldCheck, LogIn, LogOut, User as UserIcon, CalendarDays } from 'lucide-react';
 import { createBrowserClient } from '@supabase/ssr';
 import { logout } from '../app/actions/auth';
 
@@ -42,8 +42,7 @@ export default function Header() {
   };
 
   const menuItems = [
-    { href: '/tournaments', label: 'Турніри', icon: CalendarDays }, 
-    { href: '/users', label: 'Зареєстровані учасники', icon: Users },
+    { href: '/tournaments', label: 'Турніри', icon: CalendarDays },
     { href: '/leaderboards', label: 'Турнірна таблиця', icon: Trophy },
     { href: '/static/rules', label: 'Правила', icon: ShieldCheck },
   ];

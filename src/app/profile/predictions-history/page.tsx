@@ -59,7 +59,7 @@ export default function PredictionsHistoryPage() {
                 const dateA = new Date(2026, monthA - 1, dayA, hA, mA).getTime();
                 const dateB = new Date(2026, monthB - 1, dayB, hB, mB).getTime();
 
-                return dateB - dateA; // Від нових до старих
+                return dateB - dateA; 
             });
 
   setHistory(sorted);
@@ -99,7 +99,6 @@ export default function PredictionsHistoryPage() {
           )}
         </div>
       </div>
-      
     </div>
   );
 }

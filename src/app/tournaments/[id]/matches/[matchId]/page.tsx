@@ -45,7 +45,7 @@ export default async function MatchPredictionPage({
 
   const { data: rawPredictions } = await supabase
     .from('predictions')
-    .select('id, user_id, predicted_home_score, predicted_away_score, points_awarded, profiles (email)')
+    .select('id, user_id, predicted_home_score, predicted_away_score, points_awarded, profiles (username)')
     .eq('match_id', numericMatchId)
     .order('id', { ascending: false });
 
@@ -159,7 +159,7 @@ export default async function MatchPredictionPage({
 
             return (
               <div key={pred.id} className="flex justify-between items-center bg-zinc-900 p-4 rounded-2xl border border-zinc-800">
-                <span className="text-zinc-400 text-sm truncate mr-4">{profile?.email}</span>
+                <span className="text-zinc-400 text-sm truncate mr-4">{profile?.username || 'Анонімний гравець'}</span>
                 <div className="flex items-center gap-4 shrink-0">
                   {isHidden ? (
                     <div className="flex items-center gap-1.5 text-zinc-500 bg-zinc-800/50 px-3 py-1.5 rounded-xl border border-zinc-800">

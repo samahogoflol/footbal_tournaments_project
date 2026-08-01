@@ -6,7 +6,7 @@ import { ArrowLeft, Search, Trophy, Medal, CalendarClock } from 'lucide-react';
 
 interface User {
   id: string;
-  email: string;
+  username: string;
   points: number;
   rank?: number;
 }
@@ -34,7 +34,7 @@ export default function LeaderboardClient({ users, tournamentId, tournamentName 
 
   const filteredUsers = useMemo(
     () => rankedUsers.filter(user =>
-      user.email.toLowerCase().includes(searchQuery.toLowerCase())
+      user.username.toLowerCase().includes(searchQuery.toLowerCase())
     ),
     [rankedUsers, searchQuery]
   );
@@ -78,7 +78,7 @@ export default function LeaderboardClient({ users, tournamentId, tournamentName 
           </div>
           <input
             type="text"
-            placeholder="Знайти себе за поштою..."
+            placeholder="Знайти себе за ніком..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full bg-zinc-800/80 border border-zinc-700 text-zinc-100 rounded-xl py-3.5 pl-11 pr-4 focus:outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all placeholder:text-zinc-500 shadow-md shadow-black/20"
@@ -106,7 +106,7 @@ export default function LeaderboardClient({ users, tournamentId, tournamentName 
 
               <div className="flex flex-col flex-1 min-w-0">
                 <span className="font-bold text-zinc-100 text-sm md:text-base truncate tracking-wide">
-                  {user.email}
+                  {user.username}
                 </span>
               </div>
 

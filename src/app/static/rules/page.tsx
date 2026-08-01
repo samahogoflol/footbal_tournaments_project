@@ -134,6 +134,17 @@ export default function RulesPage() {
                 </p>
               </div>
             </div>
+            <div className="flex items-start gap-4 bg-zinc-800/40 border border-blue-900/30 p-5 rounded-2xl shadow-sm">
+              <div className="p-2.5 bg-blue-500/10 rounded-lg border border-blue-500/20 shrink-0">
+                <MessageSquareText className="text-blue-400" size={24} />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-base font-bold text-zinc-100 mb-1">Як зробити прогноз</span>
+                <p className="text-zinc-400 text-sm leading-relaxed">
+                  Обираєте потрібний матч, ставите свій прогноз, та він автоматично попадає до списку прогнозів. Його відразу можна побачити внизу, на тій самій сторнці, або в особистому кабінеті (Історія прогнозів)
+                </p>
+              </div>
+            </div>
 
             <div className="text-xs font-bold text-zinc-500 uppercase tracking-widest px-1 mt-2">Бонусні бали (Прийом прогнозів на бонусні бали приймається до 21.08.26 до 21:30 по Києвському часу )</div>
 
@@ -242,7 +253,17 @@ export default function RulesPage() {
                 </p>
               </div>
             </div>
-
+             <div className="flex items-start gap-4 bg-zinc-800/40 border border-blue-900/30 p-5 rounded-2xl shadow-sm">
+              <div className="p-2.5 bg-blue-500/10 rounded-lg border border-blue-500/20 shrink-0">
+                <MessageSquareText className="text-blue-400" size={24} />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-base font-bold text-zinc-100 mb-1">Як зробити прогноз</span>
+                <p className="text-zinc-400 text-sm leading-relaxed">
+                  Обираєте потрібний матч, ставите свій прогноз, та він автоматично попадає до списку прогнозів. Його відразу можна побачити внизу, на тій самій сторнці, або в особистому кабінеті (Історія прогнозів)
+                </p>
+              </div>
+            </div>
             <div className="text-xs font-bold text-zinc-500 uppercase tracking-widest px-1 mt-2">
               Бонусні бали (Прийом прогнозів на бонусні бали приймається до 09.09.26 до 17:30 по Києвському часу )
             </div>
