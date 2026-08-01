@@ -10,12 +10,12 @@ export default async function LeaderboardPage({ params }: { params: Promise<{ id
 
   const { data } = await supabase
     .from('tournament_points')
-    .select(`points, profiles ( id, username )`)
+    .select(`points, profiles_public ( id, username )`)
     .eq('tournament_id', tournamentId)
     .order('points', { ascending: false });
 
   const users = (data || []).map((item, index) => {
-  const profile = Array.isArray(item.profiles) ? item.profiles[0] : item.profiles;
+  const profile = Array.isArray(item.profiles_public) ? item.profiles_public[0] : item.profiles_public;
   return {
     id: profile?.id || `user-${index}`,
     username: profile?.username || 'Анонімний гравець',
