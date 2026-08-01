@@ -26,7 +26,7 @@ export default function LeaderboardPage() {
       try {
         const { data, error } = await supabase
           .from('tournament_points')
-          .select(`points, profiles ( id, username )`)
+          .select(`points, profiles_public ( id, username )`)
           .eq('tournament_id', activeTab)
           .order('points', { ascending: false });
 
@@ -37,7 +37,7 @@ export default function LeaderboardPage() {
 
         if (data) {
           const formattedData = data.map((item, index) => {
-            const profileInfo = Array.isArray(item.profiles) ? item.profiles[0] : item.profiles;
+            const profileInfo = Array.isArray(item.profiles_public) ? item.profiles_public[0] : item.profiles_public;
             return {
               id: profileInfo?.id || `user-${index}`,
               username: profileInfo?.username || 'Анонімний гравець',

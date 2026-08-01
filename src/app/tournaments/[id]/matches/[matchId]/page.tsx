@@ -45,7 +45,7 @@ export default async function MatchPredictionPage({
 
   const { data: rawPredictions } = await supabase
     .from('predictions')
-    .select('id, user_id, predicted_home_score, predicted_away_score, points_awarded, profiles (username)')
+    .select('id, user_id, predicted_home_score, predicted_away_score, points_awarded, profiles_public (username)')
     .eq('match_id', numericMatchId)
     .order('id', { ascending: false });
 
@@ -154,7 +154,7 @@ export default async function MatchPredictionPage({
         </div>
         <div className="space-y-2">
           {allPredictions.length > 0 ? allPredictions.map((pred) => {
-            const profile = Array.isArray(pred.profiles) ? pred.profiles[0] : pred.profiles;
+            const profile = Array.isArray(pred.profiles_public) ? pred.profiles_public[0] : pred.profiles_public;
             const isHidden = pred.predicted_home_score === null || pred.predicted_away_score === null;
 
             return (
