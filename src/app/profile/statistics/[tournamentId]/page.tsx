@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
-import { createBrowserClient } from '@supabase/ssr';
+import { createBrowserSupabaseClient } from '@/src/utils/supabase-browser';
 import { ArrowLeft, Trophy, Target, CheckCircle, Percent, TrendingUp, Hash } from 'lucide-react';
 import Link from 'next/link';
 
@@ -10,10 +10,7 @@ export default function TournamentStatisticsPage() {
   const params = useParams();
   const tournamentId = params.tournamentId as string;
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  const supabase = useMemo(() => createBrowserSupabaseClient(), []);
 
   const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);

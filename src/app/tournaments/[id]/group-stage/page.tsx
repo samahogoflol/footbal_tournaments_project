@@ -1,10 +1,11 @@
-import { supabase } from '@/src/lib/supabase';
+import { createClient } from '@/src/utils/supabase';
 import MatchesClientBoard from './MatchesClientBoard';
 import { TOURNAMENTS_CONFIG } from '@/src/config/tournametns';
 
 export default async function GroupStagePage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = await params;
   const tournamentId = resolvedParams.id;
+  const supabase = await createClient();
 
   const config = TOURNAMENTS_CONFIG[tournamentId];
   const maxGroupRound = (config?.groupStageRounds?.at(-1)?.value ?? 3) + 1;
