@@ -27,6 +27,7 @@ export default function PredictionsHistoryPage() {
                 points_awarded,
                 updated_at,
                 matches (
+                id,
                 home_team,
                 away_team,
                 home_code,

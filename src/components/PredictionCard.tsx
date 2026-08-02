@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { getTeamLogo } from "../config/getTeamLogo";
 import { formatMatchDateShort } from "../utils/matchTime";
 
@@ -10,6 +11,7 @@ interface PredictionCardProps {
     points_awarded: number | null;
 
     matches: {
+      id: number;
       match_date: string;
       match_time: string;
       home_team: string;
@@ -28,7 +30,9 @@ export const PredictionCard = ({
   tournamentId,
 }: PredictionCardProps) => {
   return (
-    <div className="flex flex-col sm:flex-row justify-between items-center bg-zinc-950 p-4 rounded-2xl border border-zinc-800 gap-4">
+    <Link
+      href={`/tournaments/${tournamentId}/matches/${item.matches.id}`}
+      className="flex flex-col sm:flex-row justify-between items-center bg-zinc-950 p-4 rounded-2xl border border-zinc-800 gap-4 hover:border-zinc-700 hover:bg-zinc-900/50 transition-colors">
       <div className="flex items-center gap-4 w-full sm:w-1/2">
         <div className="text-xs text-white font-bold w-12 text-center">
           {formatMatchDateShort(item.matches.match_date)} {item.matches.match_time}
@@ -108,6 +112,6 @@ export const PredictionCard = ({
           </div>
         )}
       </div>
-    </div>
+    </Link>
   );
 };

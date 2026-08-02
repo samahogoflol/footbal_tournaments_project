@@ -54,6 +54,7 @@ export default function ProfilePage() {
             points_awarded,
             updated_at,
             matches (
+              id,
               home_team,
               away_team,
               home_code,
@@ -255,13 +256,11 @@ export default function ProfilePage() {
                 const stats = tournamentStats[t.id];
                 const points = stats?.total_points || 0;
                 const rank = stats?.tournament_rank || '—';
-                const isUpcoming = t.status === 'upcoming';
 
                 const CardContent = (
                   <>
                     <span className="text-xs font-bold text-zinc-500 uppercase flex justify-between items-center mb-3">
                       {t.name}
-                      {isUpcoming && <Lock size={14} className="text-zinc-600" />}
                     </span>
                     <div className="flex items-end gap-2 mb-3">
                       <span className="text-4xl font-black text-white">{points}</span>
@@ -275,14 +274,6 @@ export default function ProfilePage() {
                     </div>
                   </>
                 );
-
-                if (isUpcoming) {
-                  return (
-                    <div key={t.id} className="bg-zinc-950/30 border border-zinc-800/30 p-5 rounded-2xl opacity-50 cursor-not-allowed">
-                      {CardContent}
-                    </div>
-                  );
-                }
 
                 return (
                   <Link
