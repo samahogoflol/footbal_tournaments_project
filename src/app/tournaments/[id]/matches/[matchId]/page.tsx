@@ -2,7 +2,8 @@ import Link from 'next/link';
 import { ArrowLeft, Clock, Users, Lock, AlertCircle } from 'lucide-react';
 import { createClient } from '@/src/utils/supabase';
 import PredictionForm from '@/src/components/PredictionForm';
-import { TOURNAMENTS_CONFIG } from '@/src/config/tournametns'; 
+import { TOURNAMENTS_CONFIG } from '@/src/config/tournametns';
+import { parseMatchKickoff, formatMatchDateShort } from '@/src/utils/matchTime';
 
 export default async function MatchPredictionPage({
   params,
@@ -63,14 +64,7 @@ export default async function MatchPredictionPage({
   const isMatchLive = match.status === 'live';
   const isMatchFinished = match.status === 'finished';
 
-  const isTimePassed = (date: string, time: string) => {
-    const nowInKievStr = new Date().toLocaleString('en-US', { timeZone: 'Europe/Kiev' });
-    const nowInKiev = new Date(nowInKievStr).getTime();
-    const matchTimeObj = new Date(`${date}T${time}:00`).getTime();
-    return nowInKiev >= matchTimeObj;
-  };
-
-  const isMatchStartedByTime = isTimePassed(match.match_date, match.match_time);
+  const isMatchStartedByTime = new Date().getTime() >= parseMatchKickoff(match.match_date, match.match_time);
   const isLocked = isMatchLive || isMatchFinished || isMatchStartedByTime;
 
   const allPredictions = (rawPredictions || []).map((pred) => {
@@ -103,7 +97,7 @@ export default async function MatchPredictionPage({
       <div className="bg-zinc-900 rounded-3xl border border-zinc-800 p-8 mb-6 shadow-2xl">
         <div className="flex justify-center items-center gap-3 mb-8">
           <Clock size={18} className="text-zinc-500" />
-          <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">{match.match_date} • {match.match_time}</span>
+          <span className="text-xs font-bold text-zinc-400 uppercase tracking-widest">{formatMatchDateShort(match.match_date)} • {match.match_time}</span>
         </div>
 
         <div className="flex justify-between items-center gap-4">

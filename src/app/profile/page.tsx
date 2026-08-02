@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { Camera, Save, Lock, Trophy, History, Star, Check } from 'lucide-react';
 import { createBrowserSupabaseClient } from '@/src/utils/supabase-browser';
 import { PredictionCard } from '@/src/components/PredictionCard';
+import { parseMatchKickoff } from '@/src/utils/matchTime';
 import Link from 'next/link';
 
 export default function ProfilePage() {
@@ -74,13 +75,8 @@ export default function ProfilePage() {
             const matchB = b.matches as any;
             if (!matchA || !matchB) return 0;
 
-            const [dayA, monthA] = matchA.match_date.split('.').map(Number);
-            const [dayB, monthB] = matchB.match_date.split('.').map(Number);
-            const [hA, mA] = matchA.match_time.split(':').map(Number);
-            const [hB, mB] = matchB.match_time.split(':').map(Number);
-
-            const dateA = new Date(2026, monthA - 1, dayA, hA, mA).getTime();
-            const dateB = new Date(2026, monthB - 1, dayB, hB, mB).getTime();
+            const dateA = parseMatchKickoff(matchA.match_date, matchA.match_time);
+            const dateB = parseMatchKickoff(matchB.match_date, matchB.match_time);
 
             return dateB - dateA;
           });
@@ -114,7 +110,12 @@ export default function ProfilePage() {
   }, [supabase]);
 
   const handleSaveNickname = async () => {
-    if (!userId || !nickname.trim()) return;
+    if (!userId) {
+      alert('⚠️ Не вдалося визначити користувача. Спробуйте перезайти в акаунт.');
+      return;
+    }
+    if (!nickname.trim()) return;
+
     setIsSavingNickname(true);
 
     const { error } = await supabase
@@ -122,7 +123,10 @@ export default function ProfilePage() {
       .update({ username: nickname.trim() })
       .eq('id', userId);
 
-    if (!error) {
+    if (error) {
+      console.error('Помилка збереження нікнейму:', error);
+      alert(`⚠️ Не вдалося зберегти нікнейм: ${error.message}`);
+    } else {
       setNicknameSaved(true);
       setTimeout(() => setNicknameSaved(false), 2000);
     }

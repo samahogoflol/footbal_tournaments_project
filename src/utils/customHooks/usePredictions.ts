@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { createBrowserSupabaseClient } from '@/src/utils/supabase-browser';
+import { parseMatchKickoff } from '@/src/utils/matchTime';
 
 interface UsePredictionProps {
   matchId: number;
@@ -11,13 +12,6 @@ interface UsePredictionProps {
   initialAwayScore?: string;
   onSuccess?: () => void;
 }
-
-const parseMatchTime = (date: string, time: string): number => {
-  const [day, month] = date.split('.').map(Number);
-  const [hours, minutes] = time.split(':').map(Number);
-  const matchDateStr = `2026-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}T${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00+03:00`;
-  return new Date(matchDateStr).getTime();
-};
 
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -39,7 +33,7 @@ export function usePrediction({
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
 
   const matchTimestamp = useMemo(
-    () => parseMatchTime(matchDate, matchTime),
+    () => parseMatchKickoff(matchDate, matchTime),
     [matchDate, matchTime]
   );
 

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, CalendarDays, ChevronLeft, ChevronRight as ChevronRightIcon } from 'lucide-react';
+import { formatMatchDateShort } from '@/src/utils/matchTime';
 
 interface Round {
   value: number;
@@ -134,7 +135,7 @@ export default function LeagueMatchesClientBoard({ initialMatches, tournamentId,
                 ) : (
                   <div className="flex flex-col items-center bg-zinc-950 px-3 py-1.5 rounded-lg border border-zinc-800 w-full group-hover:border-zinc-700 transition-colors">
                     <span className="text-zinc-500 text-[10px] font-black uppercase tracking-widest mb-0.5 whitespace-nowrap">
-                      {match.match_date}
+                      {formatMatchDateShort(match.match_date)}
                     </span>
                     <span className="text-zinc-100 font-black text-lg leading-none">
                       {match.match_time}

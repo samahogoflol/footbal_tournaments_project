@@ -5,6 +5,7 @@ import { History, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { createBrowserSupabaseClient } from '@/src/utils/supabase-browser';
 import { PredictionCard } from '@/src/components/PredictionCard';
+import { parseMatchKickoff } from '@/src/utils/matchTime';
 
 export default function PredictionsHistoryPage() {
   const supabase = useMemo(() => createBrowserSupabaseClient(), []);
@@ -48,15 +49,10 @@ export default function PredictionsHistoryPage() {
 
                 if (!matchA || !matchB) return 0;
 
-                const [dayA, monthA] = matchA.match_date.split('.').map(Number);
-                const [dayB, monthB] = matchB.match_date.split('.').map(Number);
-                const [hA, mA] = matchA.match_time.split(':').map(Number);
-                const [hB, mB] = matchB.match_time.split(':').map(Number);
+                const dateA = parseMatchKickoff(matchA.match_date, matchA.match_time);
+                const dateB = parseMatchKickoff(matchB.match_date, matchB.match_time);
 
-                const dateA = new Date(2026, monthA - 1, dayA, hA, mA).getTime();
-                const dateB = new Date(2026, monthB - 1, dayB, hB, mB).getTime();
-
-                return dateB - dateA; 
+                return dateB - dateA;
             });
 
   setHistory(sorted);

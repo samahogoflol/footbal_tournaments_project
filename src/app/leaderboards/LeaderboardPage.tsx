@@ -25,26 +25,30 @@ export default function LeaderboardPage() {
       setUsers([]);
 
       try {
-        const { data, error } = await supabase
-          .from('tournament_points')
-          .select(`points, profiles_public ( id, username )`)
+        const { data: stats, error } = await supabase
+          .from('tournament_user_statistics')
+          .select('user_id, total_points')
           .eq('tournament_id', activeTab)
-          .order('points', { ascending: false });
+          .order('total_points', { ascending: false });
 
         if (error) {
           console.error('Помилка завантаження:', error);
           return;
         }
 
-        if (data) {
-          const formattedData = data.map((item, index) => {
-            const profileInfo = Array.isArray(item.profiles_public) ? item.profiles_public[0] : item.profiles_public;
-            return {
-              id: profileInfo?.id || `user-${index}`,
-              username: profileInfo?.username || 'Анонімний гравець',
-              points: item.points || 0
-            };
-          });
+        if (stats) {
+          const userIds = stats.map((item) => item.user_id);
+          const { data: profiles } = userIds.length
+            ? await supabase.from('profiles_public').select('id, username').in('id', userIds)
+            : { data: [] };
+
+          const usernameById = new Map((profiles || []).map((p) => [p.id, p.username]));
+
+          const formattedData = stats.map((item, index) => ({
+            id: item.user_id || `user-${index}`,
+            username: usernameById.get(item.user_id) || 'Анонімний гравець',
+            points: item.total_points || 0
+          }));
           setUsers(formattedData);
         }
       } catch (err) {

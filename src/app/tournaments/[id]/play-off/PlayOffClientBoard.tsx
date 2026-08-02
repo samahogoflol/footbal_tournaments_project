@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, CalendarDays } from 'lucide-react';
+import { parseMatchKickoff, formatMatchDateShort } from '@/src/utils/matchTime';
 
 interface Round {
   value: number;
@@ -15,17 +16,10 @@ interface MatchesClientBoardProps {
   rounds: Round[];
 }
 
-function parseMatchDateTime(dateStr: string, timeStr: string): number {
-  if (!dateStr || !timeStr) return 0;
-  const [day, month] = dateStr.split('.').map(Number);
-  const [hours, minutes] = timeStr.split(':').map(Number);
-  return new Date(2026, (month || 1) - 1, day || 1, hours || 0, minutes || 0).getTime();
-}
-
 export default function PlayOffClientBoard({ initialMatches, tournamentId, rounds }: MatchesClientBoardProps) {
 
   const sortedMatches = [...initialMatches].sort(
-    (a, b) => parseMatchDateTime(a.match_date, a.match_time) - parseMatchDateTime(b.match_date, b.match_time)
+    (a, b) => parseMatchKickoff(a.match_date, a.match_time) - parseMatchKickoff(b.match_date, b.match_time)
   );
 
   const availableRounds = new Set(sortedMatches.map((match) => match.round));
@@ -127,7 +121,7 @@ export default function PlayOffClientBoard({ initialMatches, tournamentId, round
               ) : (
                 <div className="flex flex-col items-center bg-zinc-950 px-3 py-1.5 rounded-lg border border-zinc-800 w-full group-hover:border-zinc-700 transition-colors">
                   <span className="text-zinc-500 text-[10px] font-black uppercase tracking-widest mb-0.5 whitespace-nowrap">
-                    {match.match_date}
+                    {formatMatchDateShort(match.match_date)}
                   </span>
                   <span className="text-zinc-100 font-black text-lg leading-none">
                     {match.match_time}

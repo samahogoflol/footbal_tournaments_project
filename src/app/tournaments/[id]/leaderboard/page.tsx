@@ -8,20 +8,24 @@ export default async function LeaderboardPage({ params }: { params: Promise<{ id
   const { id: tournamentId } = await params;
   const config = TOURNAMENTS_CONFIG[tournamentId];
 
-  const { data } = await supabase
-    .from('tournament_points')
-    .select(`points, profiles_public ( id, username )`)
+  const { data: stats } = await supabase
+    .from('tournament_user_statistics')
+    .select('user_id, total_points')
     .eq('tournament_id', tournamentId)
-    .order('points', { ascending: false });
+    .order('total_points', { ascending: false });
 
-  const users = (data || []).map((item, index) => {
-  const profile = Array.isArray(item.profiles_public) ? item.profiles_public[0] : item.profiles_public;
-  return {
-    id: profile?.id || `user-${index}`,
-    username: profile?.username || 'Анонімний гравець',
-    points: item.points || 0,
-  };
-});
+  const userIds = (stats || []).map((item) => item.user_id);
+  const { data: profiles } = userIds.length
+    ? await supabase.from('profiles_public').select('id, username').in('id', userIds)
+    : { data: [] };
+
+  const usernameById = new Map((profiles || []).map((p) => [p.id, p.username]));
+
+  const users = (stats || []).map((item, index) => ({
+    id: item.user_id || `user-${index}`,
+    username: usernameById.get(item.user_id) || 'Анонімний гравець',
+    points: item.total_points || 0,
+  }));
 
   return <LeaderboardClient 
     users={users} 

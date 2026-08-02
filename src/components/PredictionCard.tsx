@@ -1,4 +1,5 @@
 import { getTeamLogo } from "../config/getTeamLogo";
+import { formatMatchDateShort } from "../utils/matchTime";
 
 interface PredictionCardProps {
   tournamentId: string;
@@ -30,7 +31,7 @@ export const PredictionCard = ({
     <div className="flex flex-col sm:flex-row justify-between items-center bg-zinc-950 p-4 rounded-2xl border border-zinc-800 gap-4">
       <div className="flex items-center gap-4 w-full sm:w-1/2">
         <div className="text-xs text-white font-bold w-12 text-center">
-          {item.matches.match_date} {item.matches.match_time}
+          {formatMatchDateShort(item.matches.match_date)} {item.matches.match_time}
         </div>
 
         <div className="flex items-center gap-2 flex-1 justify-end">
